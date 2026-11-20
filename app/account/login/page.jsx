@@ -36,7 +36,8 @@ export default function AccountLoginPage() {
 
     setLoading(true);
     try {
-      const { error: authError } = await createSupabaseBrowserClient().auth.signInWithPassword({
+      const supabase = createSupabaseBrowserClient();
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -46,7 +47,40 @@ export default function AccountLoginPage() {
         return;
       }
 
-      router.replace("/account");
+      if (!user) {
+        setError("Sign-in failed. Please try again.");
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        setError(signOutError
+          ? "Unable to verify account access, and sign-out failed. Please try again."
+          : "Unable to verify account access. Please try again.");
+        return;
+      }
+
+      if (profile?.role === "admin") {
+        router.replace("/admin?signedIn=1");
+        router.refresh();
+        return;
+      }
+
+      if (profile?.role !== "customer") {
+        const { error: signOutError } = await supabase.auth.signOut();
+        setError(signOutError
+          ? `${ERROR_MESSAGES.unauthorized} Sign-out failed; please sign out and try again.`
+          : ERROR_MESSAGES.unauthorized);
+        return;
+      }
+
+      router.replace("/account?signedIn=1");
       router.refresh();
     } catch {
       setError("Unable to contact the sign-in service. Please try again.");

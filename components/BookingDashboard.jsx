@@ -27,7 +27,13 @@ export default function BookingDashboard({ admin = false }) {
   useEffect(() => {
     const refresh = () => setBookings(getBookings());
     refresh();
-    const created = new URLSearchParams(window.location.search).get("created");
+    const params = new URLSearchParams(window.location.search);
+    const created = params.get("created");
+    if (params.get("signedIn") === "1") {
+      setNotice(admin
+        ? "Signed in successfully. You are in the administrator dashboard."
+        : "Signed in successfully.");
+    }
     if (created) setNotice(`Request ${created} received. It is saved in this browser demo.`);
     window.addEventListener("storage", refresh);
     window.addEventListener("bookings-updated", refresh);
@@ -35,7 +41,7 @@ export default function BookingDashboard({ admin = false }) {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("bookings-updated", refresh);
     };
-  }, []);
+  }, [admin]);
 
   const updateConfigItem = (group, id, field, value) => {
     setBookingConfig((current) => ({

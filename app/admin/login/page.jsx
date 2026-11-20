@@ -36,7 +36,8 @@ export default function AdminLoginPage() {
 
     setLoading(true);
     try {
-      const { error: authError } = await createSupabaseBrowserClient().auth.signInWithPassword({
+      const supabase = createSupabaseBrowserClient();
+      const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -46,7 +47,32 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.replace("/admin");
+      if (!user) {
+        setError("Sign-in failed. Please try again.");
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError || profile?.role !== "admin") {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (profileError) {
+          setError(signOutError
+            ? "Unable to verify administrator access, and sign-out failed. Please try again."
+            : "Unable to verify administrator access. Please try again.");
+        } else {
+          setError(signOutError
+            ? `${ERROR_MESSAGES.unauthorized} Sign-out failed; please sign out and try again.`
+            : ERROR_MESSAGES.unauthorized);
+        }
+        return;
+      }
+
+      router.replace("/admin?signedIn=1");
       router.refresh();
     } catch {
       setError("Unable to contact the sign-in service. Please try again.");
