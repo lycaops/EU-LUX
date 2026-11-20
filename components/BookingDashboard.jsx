@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getBookings, removeBooking, updateBooking } from "@/lib/bookings";
 import { getBookingConfig, saveBookingConfig } from "@/lib/bookingConfig";
 import AdminSignOut from "@/components/AdminSignOut";
+import CustomerSignOut from "@/components/CustomerSignOut";
 
 const STATUS_OPTIONS = ["pending", "confirmed", "assigned", "completed", "cancelled"];
 const EMPTY_FILTER = "all";
@@ -109,6 +110,7 @@ export default function BookingDashboard({ admin = false }) {
         </div>
         <div className="workspace__header-actions">
           {admin && <AdminSignOut />}
+          {!admin && <CustomerSignOut />}
           <a className="btn btn--solid workspace__new" href="/">Request a journey <span aria-hidden="true">↗</span></a>
         </div>
       </header>

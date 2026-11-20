@@ -52,6 +52,8 @@ This project uses Next.js 14 and Supabase Auth for administrator access. The ste
    npm run start
    ```
 
+Customer accounts must be created in Supabase Authentication; new users receive the `customer` role through the profile trigger. Customers sign in at `/account/login`. The `/account` route checks the Supabase session and customer role on the server.
+
 ### 3. Deploy with Vercel
 
 1. Push the project to a Git provider supported by Vercel, then import that repository into Vercel.
@@ -69,7 +71,7 @@ The middleware and server-rendered `/admin` page both verify the Supabase user a
 
 ## Important production limitation
 
-The booking form, customer account, admin booking list, and booking configuration are still a browser-only demo stored in `localStorage` (`lib/bookings.js` and `lib/bookingConfig.js`). They are not connected to the Supabase booking tables, and browser-local data is not shared with the business or other users. The SQL intentionally does not allow anonymous guests to insert bookings. Do not accept real bookings or customer personal data with this demo; a validated, rate-limited server booking flow and database-backed dashboards are required first.
+The booking form, customer account, admin booking list, and booking configuration are still a browser-only demo stored in `localStorage` (`lib/bookings.js` and `lib/bookingConfig.js`). Customer sign-in gates the account route, but these demo bookings are not connected to Supabase or isolated by customer identity. Browser-local data is not shared with the business or other users. The SQL intentionally does not allow anonymous guests to insert bookings. Do not accept real bookings or customer personal data with this demo; a validated, rate-limited server booking flow and database-backed dashboards are required first.
 
 ## Project
 
