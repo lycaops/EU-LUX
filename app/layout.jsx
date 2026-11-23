@@ -6,6 +6,15 @@ import Footer from "@/components/Footer";
 export const metadata = {
   title: "EU Luxury Tours & Travels | Premium Chauffeur Service Italy",
   description: "Exceptional chauffeur experiences in Mercedes-Benz V-Class V250. Noleggio con conducente (NCC) in Italy and Europe.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/web/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/web/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/icons/web/icon-192.png",
+    apple: "/icons/web/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {

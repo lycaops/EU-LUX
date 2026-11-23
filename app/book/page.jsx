@@ -57,6 +57,8 @@ function BookingRequest() {
   const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
   const timeInput = useRef(null);
   const routeRequestId = useRef(0);
+  const wizardRef = useRef(null);
+  const lastStep = useRef(step);
   const [config] = useState(() => getBookingConfig());
   const SERVICES = config.services.filter((item) => item.enabled);
   const EXTRAS = config.extras.filter((item) => item.enabled);
@@ -81,6 +83,17 @@ function BookingRequest() {
     email: "",
     phone: "",
   });
+
+  // Whenever the customer moves between steps, bring the form back to the start so the
+  // new step is shown from its beginning instead of leaving them scrolled down.
+  useEffect(() => {
+    if (lastStep.current === step) return;
+    lastStep.current = step;
+    const node = wizardRef.current;
+    const top = node ? node.getBoundingClientRect().top + window.scrollY : 0;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top, behavior: reduce ? "auto" : "smooth" });
+  }, [step]);
 
   useEffect(() => {
     let active = true;
@@ -377,7 +390,7 @@ function BookingRequest() {
   };
 
   return (
-    <section className="booking-wizard">
+    <section className="booking-wizard" ref={wizardRef}>
       {greeting && <p className="workspace__notice" role="status">{greeting}</p>}
       <header className="booking-wizard__header">
         <div><p>Book your journey</p><h1>Four steps, one flawless arrival.</h1></div>
