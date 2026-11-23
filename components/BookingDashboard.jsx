@@ -16,11 +16,18 @@ function formatPickup(booking) {
     : "Date to be confirmed";
 }
 
+function getQuoteVatRate(booking) {
+  const vatLine = booking.quoteBreakdown.find((line) => /^VAT \(([\d.]+)%\)$/.test(line.label));
+  const match = vatLine?.label.match(/^VAT \(([\d.]+)%\)$/);
+  return match ? Number(match[1]) : 10;
+}
+
 export default function BookingDashboard({ admin = false }) {
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState(EMPTY_FILTER);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
+  const [quoteEditing, setQuoteEditing] = useState(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -73,6 +80,56 @@ export default function BookingDashboard({ admin = false }) {
       setNotice(`${booking.reference} moved to ${status}.`);
     } catch {
       setError(`Unable to update ${booking.reference}. Please try again.`);
+    }
+  };
+
+  const saveQuote = async (event, booking) => {
+    event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const rawLines = data.breakdown.split("\n").map((line) => line.trim()).filter(Boolean);
+    const lines = rawLines.map((line) => {
+      const separator = line.lastIndexOf("|");
+      if (separator < 1) return null;
+      const label = line.slice(0, separator).trim();
+      const amount = Number(line.slice(separator + 1).trim().replace(",", "."));
+      return label && Number.isFinite(amount) && amount >= 0 ? { label, amount } : null;
+    }).filter(Boolean);
+    const vatRate = Number(data.vatRate);
+    if (!lines.length || lines.length !== rawLines.length || !Number.isFinite(vatRate) || vatRate < 0) {
+      setError("Enter quote lines as “Description | amount” and a valid VAT percentage.");
+      return;
+    }
+
+    const subtotal = Math.round(lines.reduce((sum, line) => sum + line.amount, 0) * 100) / 100;
+    const vat = Math.round(subtotal * vatRate) / 100;
+    const total = Math.round((subtotal + vat) * 100) / 100;
+    setError("");
+    try {
+      const updated = await updateBooking(booking.id, {
+        subtotal,
+        vat,
+        total,
+        quoteStatus: "sent",
+        quoteBreakdown: [...lines, { label: `VAT (${vatRate}%)`, amount: vat }],
+        quoteMessage: data.quoteMessage.trim(),
+        quotedAt: new Date().toISOString(),
+      });
+      setBookings((current) => current.map((item) => item.id === booking.id ? updated : item));
+      setQuoteEditing(null);
+      setNotice(`Fare breakdown sent to ${booking.reference}'s customer account.`);
+    } catch {
+      setError(`Unable to send a fare breakdown for ${booking.reference}. Please try again.`);
+    }
+  };
+
+  const acceptQuote = async (booking) => {
+    setError("");
+    try {
+      const updated = await updateBooking(booking.id, { quoteStatus: "accepted" });
+      setBookings((current) => current.map((item) => item.id === booking.id ? updated : item));
+      setNotice(`Fare accepted for ${booking.reference}.`);
+    } catch {
+      setError(`Unable to accept the fare for ${booking.reference}. Please try again.`);
     }
   };
 
@@ -146,8 +203,20 @@ export default function BookingDashboard({ admin = false }) {
               <div><span className="route-dot route-dot--end"/><div><small>Destination</small><strong>{booking.dropoff}</strong></div></div>
             </div>
             <div className="booking-card__details">
-              <span>{booking.name}</span><span>{booking.passengers} {Number(booking.passengers) === 1 ? "passenger" : "passengers"}</span><span>{booking.phone || "Phone not provided"}</span>
+              <span>{booking.name}</span><span>{booking.email}</span><span>{booking.passengers} {Number(booking.passengers) === 1 ? "passenger" : "passengers"}</span><span>{booking.phone || "Phone not provided"}</span>
             </div>
+            {booking.tourPackageName && <p className="booking-card__request"><strong>Package:</strong> {booking.tourPackageName}</p>}
+            {booking.distanceKm != null && <p className="booking-card__request"><strong>Estimated route:</strong> {booking.distanceKm} km · <span>© OpenStreetMap contributors · Routing by OSRM</span></p>}
+            {booking.specialRequest && <p className="booking-card__request"><strong>Customer request:</strong> {booking.specialRequest}</p>}
+            {booking.quoteStatus !== "none" && (
+              <div className="booking-quote">
+                <h3>{booking.quoteStatus === "accepted" ? "Fare accepted" : "Fare breakdown"}</h3>
+                {booking.quoteBreakdown.map((line, index) => <p key={`${line.label}-${index}`}><span>{line.label}</span><strong>€{Number(line.amount).toFixed(2)}</strong></p>)}
+                <p className="booking-quote__total"><span>Total</span><strong>€{booking.total.toFixed(2)}</strong></p>
+                {booking.quoteMessage && <p className="booking-quote__message">{booking.quoteMessage}</p>}
+                {!admin && booking.quoteStatus === "sent" && <button className="btn btn--solid" type="button" onClick={() => acceptQuote(booking)}>Accept this fare</button>}
+              </div>
+            )}
             {editing === booking.id ? (
               <form className="booking-edit" onSubmit={(event) => saveEdit(event, booking)}>
                 <label>Name<input name="name" defaultValue={booking.name} required /></label>
@@ -162,11 +231,19 @@ export default function BookingDashboard({ admin = false }) {
                 <label className="booking-edit__wide">Notes<textarea name="notes" rows="2" defaultValue={booking.notes || ""} /></label>
                 <div className="booking-edit__actions"><button className="btn btn--solid" type="submit">Save changes</button><button className="btn btn--ghost" type="button" onClick={() => setEditing(null)}>Discard</button></div>
               </form>
+            ) : admin && quoteEditing === booking.id ? (
+              <form className="booking-edit booking-quote-form" onSubmit={(event) => saveQuote(event, booking)}>
+                <label className="booking-edit__wide">Fare lines <small>One per line: Description | amount (EUR)</small><textarea name="breakdown" rows="4" defaultValue={booking.quoteBreakdown.filter((line) => !line.label.startsWith("VAT (")).map((line) => `${line.label} | ${line.amount}`).join("\n") || (booking.distanceKm ? `Route (${booking.distanceKm} km) | ` : "")} required /></label>
+                <label>VAT (%)<input name="vatRate" type="number" min="0" step="0.01" defaultValue={getQuoteVatRate(booking)} required /></label>
+                <label className="booking-edit__wide">Message to customer<textarea name="quoteMessage" rows="2" defaultValue={booking.quoteMessage} placeholder="Optional details about this fare" /></label>
+                <div className="booking-edit__actions"><button className="btn btn--solid" type="submit">Send fare breakdown</button><button className="btn btn--ghost" type="button" onClick={() => setQuoteEditing(null)}>Discard</button></div>
+              </form>
             ) : (
               <div className="booking-card__actions">
                 {admin && booking.status === "pending" && <button className="action-link action-link--accept" type="button" onClick={() => changeStatus(booking, "confirmed")}>Accept request</button>}
                 {admin && <label className="booking-card__status">Update status<select value={booking.status} onChange={(event) => changeStatus(booking, event.target.value)}>{STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}</option>)}</select></label>}
                 {admin && booking.status !== "completed" && booking.status !== "cancelled" && <button className="action-link" type="button" onClick={() => setEditing(booking.id)}>Edit details</button>}
+                {admin && booking.status !== "cancelled" && <button className="action-link" type="button" onClick={() => setQuoteEditing(booking.id)}>{booking.quoteStatus === "none" ? "Prepare fare" : "Update fare"}</button>}
                 {!admin && !["completed", "cancelled"].includes(booking.status) && <button className="action-link action-link--cancel" type="button" onClick={() => changeStatus(booking, "cancelled")}>Cancel journey</button>}
                 {admin && <button className="action-link action-link--remove" type="button" onClick={() => deleteBooking(booking)}>Remove</button>}
               </div>

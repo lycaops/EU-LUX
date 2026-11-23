@@ -107,6 +107,8 @@ create table if not exists public.bookings (
   guest_name text, guest_email text, guest_phone text,
   vehicle_id uuid references public.vehicles(id),
   tariff_id uuid references public.tariffs(id),
+  tour_package_id uuid references public.tour_packages(id) on delete set null,
+  tour_package_name text,
   service_type text not null default 'transfer',
   vehicle_name text,
   extras jsonb not null default '[]',
@@ -118,16 +120,98 @@ create table if not exists public.bookings (
   luggage int not null default 0,
   flight_number text,
   notes text,
+  special_request text,
   distance_km numeric(8,2),
   subtotal numeric(10,2) not null default 0,
   vat numeric(10,2) not null default 0,
   total numeric(10,2) not null default 0,
+  quote_status text not null default 'none' check (quote_status in ('none','sent','accepted')),
+  quote_breakdown jsonb not null default '[]',
+  quote_message text,
+  quoted_at timestamptz,
   status text not null default 'pending'
     check (status in ('pending','confirmed','assigned','completed','cancelled')),
   payment_status text not null default 'unpaid' check (payment_status in ('unpaid','paid','refunded')),
   lang text not null default 'en',
   created_at timestamptz not null default now()
 );
+alter table public.bookings add column if not exists tour_package_id uuid references public.tour_packages(id) on delete set null;
+alter table public.bookings add column if not exists tour_package_name text;
+alter table public.bookings add column if not exists special_request text;
+alter table public.bookings add column if not exists quote_status text not null default 'none' check (quote_status in ('none','sent','accepted'));
+alter table public.bookings add column if not exists quote_breakdown jsonb not null default '[]';
+alter table public.bookings add column if not exists quote_message text;
+alter table public.bookings add column if not exists quoted_at timestamptz;
+-- Recreate these guards below, after normalizing legacy booking rows.
+drop trigger if exists protect_customer_booking_status on public.bookings;
+drop trigger if exists enforce_booking_availability on public.bookings;
+update public.bookings b
+set vehicle_id = v.id
+from public.vehicles v
+where b.vehicle_id is null
+  and b.vehicle_name = v.name
+  and (select count(*) from public.vehicles candidate where candidate.name = b.vehicle_name) = 1;
+
+create or replace function public.unavailable_vehicle_dates(
+  p_vehicle_id uuid,
+  p_start_date date,
+  p_end_date date
+) returns table (unavailable_date date)
+language sql stable security definer set search_path = '' as $$
+  select distinct (b.pickup_at at time zone 'Europe/Rome')::date
+  from public.bookings b
+  where (b.vehicle_id = p_vehicle_id or (
+      b.vehicle_id is null
+      and b.vehicle_name = (select v.name from public.vehicles v where v.id = p_vehicle_id)
+    ))
+    and b.status in ('pending','confirmed','assigned')
+    and (b.pickup_at at time zone 'Europe/Rome')::date between p_start_date and p_end_date
+  order by 1;
+$$;
+revoke all on function public.unavailable_vehicle_dates(uuid, date, date) from public, anon, authenticated;
+grant execute on function public.unavailable_vehicle_dates(uuid, date, date) to authenticated;
+
+create or replace function public.enforce_booking_availability() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  local_pickup_date date;
+begin
+  if not public.is_admin() and (
+    tg_op = 'INSERT'
+    or new.pickup_at is distinct from old.pickup_at
+    or new.vehicle_id is distinct from old.vehicle_id
+    or (new.status in ('pending','confirmed','assigned') and old.status not in ('pending','confirmed','assigned'))
+  ) then
+    if new.pickup_at < now() + interval '24 hours' then
+      raise exception using errcode = '23514', message = 'Bookings must be made at least 24 hours in advance';
+    end if;
+  end if;
+
+  if new.status not in ('pending','confirmed','assigned') or new.vehicle_id is null then
+    return new;
+  end if;
+
+  local_pickup_date := (new.pickup_at at time zone 'Europe/Rome')::date;
+  perform pg_advisory_xact_lock(hashtext(new.vehicle_id::text || ':' || local_pickup_date::text));
+  if exists (
+    select 1
+    from public.bookings b
+    where (b.vehicle_id = new.vehicle_id or (
+        b.vehicle_id is null
+        and b.vehicle_name = (select v.name from public.vehicles v where v.id = new.vehicle_id)
+      ))
+      and b.id is distinct from new.id
+      and b.status in ('pending','confirmed','assigned')
+      and (b.pickup_at at time zone 'Europe/Rome')::date = local_pickup_date
+  ) then
+    raise exception using errcode = '23P01', message = 'Vehicle is unavailable on the selected date';
+  end if;
+
+  return new;
+end; $$;
+drop trigger if exists enforce_booking_availability on public.bookings;
+create trigger enforce_booking_availability before insert or update of pickup_at, vehicle_id, status
+  on public.bookings for each row execute function public.enforce_booking_availability();
 
 create table if not exists public.booking_extras (
   booking_id uuid references public.bookings(id) on delete cascade,
@@ -191,6 +275,9 @@ create policy "create booking" on public.bookings for insert with check (
     and subtotal = 0
     and vat = 0
     and total = 0
+    and quote_status = 'none'
+    and quote_breakdown = '[]'::jsonb
+    and quoted_at is null
   )
   or public.is_admin()
 );
@@ -198,18 +285,21 @@ create policy "admin update bookings" on public.bookings for update using (publi
 create policy "admin delete bookings" on public.bookings for delete using (public.is_admin());
 create policy "customers update own bookings" on public.bookings for update
   using (customer_id = auth.uid() and status in ('pending','confirmed'))
-  with check (customer_id = auth.uid() and status in ('pending','confirmed','cancelled'));
+  with check (customer_id = auth.uid() and status in ('pending','confirmed','cancelled')
+    and quote_status in ('none','sent','accepted'));
 create policy "customers remove own bookings" on public.bookings for delete
   using (customer_id = auth.uid() and status in ('pending','cancelled'));
 
 create or replace function public.protect_customer_booking_status() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
-  if not public.is_admin() and (
-    (to_jsonb(new) - 'status') is distinct from (to_jsonb(old) - 'status')
-    or (new.status is distinct from old.status and new.status <> 'cancelled')
-  ) then
-    raise exception 'Customers may only cancel their own bookings';
+  if not public.is_admin() then
+    if (to_jsonb(new) - 'status' - 'quote_status') is distinct from (to_jsonb(old) - 'status' - 'quote_status')
+      or (new.status is distinct from old.status and new.status <> 'cancelled')
+      or (new.quote_status is distinct from old.quote_status
+        and not (old.quote_status = 'sent' and new.quote_status = 'accepted')) then
+      raise exception 'Customers may only cancel bookings or accept a sent quote';
+    end if;
   end if;
   return new;
 end; $$;

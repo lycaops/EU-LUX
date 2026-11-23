@@ -5,38 +5,119 @@ import { useSearchParams } from "next/navigation";
 import { createBooking } from "@/lib/bookings";
 import { getBookingConfig } from "@/lib/bookingConfig";
 import { getSignInGreeting } from "@/lib/supabase/greeting";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import AvailabilityDatePicker from "@/components/AvailabilityDatePicker";
+
+const TARIFF_SERVICE = { transfer: "transfer", hourly: "hourly", tour: "daily" };
+const currency = (amount) => new Intl.NumberFormat(undefined, { style: "currency", currency: "EUR" }).format(amount);
+const dateKey = (date) => [
+  date.getFullYear(),
+  String(date.getMonth() + 1).padStart(2, "0"),
+  String(date.getDate()).padStart(2, "0"),
+].join("-");
+
+function nextMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function isValidDateKey(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  return dateKey(new Date(year, month - 1, day)) === value;
+}
 
 function BookingRequest() {
   const params = useSearchParams();
+  const requestedDate = params.get("date") || "";
+  const hasRequestedDate = isValidDateKey(requestedDate);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    return hasRequestedDate
+      ? requestedDate.slice(0, 7)
+      : nextMonthKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  });
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [greeting, setGreeting] = useState("");
-  const dateInput = useRef(null);
+  const [catalogError, setCatalogError] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
+  const [vehicles, setVehicles] = useState([]);
+  const [tourPackages, setTourPackages] = useState([]);
+  const [tariffs, setTariffs] = useState([]);
+  const [route, setRoute] = useState(null);
+  const [calculatingRoute, setCalculatingRoute] = useState(false);
+  const [routeError, setRouteError] = useState("");
+  const [availabilityByMonth, setAvailabilityByMonth] = useState({});
+  const [availabilityCheckedMonths, setAvailabilityCheckedMonths] = useState({});
+  const [availabilityLoadingMonth, setAvailabilityLoadingMonth] = useState("");
+  const [availabilityErrors, setAvailabilityErrors] = useState({});
+  const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
   const timeInput = useRef(null);
+  const routeRequestId = useRef(0);
   const [config] = useState(() => getBookingConfig());
   const SERVICES = config.services.filter((item) => item.enabled);
-  const VEHICLES = config.vehicles.filter((item) => item.enabled);
   const EXTRAS = config.extras.filter((item) => item.enabled);
   const PAYMENTS = config.payments.filter((item) => item.enabled);
   const [form, setForm] = useState({
     service: "transfer",
     pickup: params.get("pickup") || "",
     dropoff: params.get("dropoff") || "",
-    date: params.get("date") || "",
+    date: hasRequestedDate ? requestedDate : "",
     time: params.get("time") || "",
     passengers: Number(params.get("pax") || 2),
     luggage: 2,
     flight: "",
     notes: "",
-    vehicle: "v250",
+    specialRequest: "",
+    vehicle: "",
+    tourPackageId: "",
     extras: [],
     payment: "later",
     name: "",
     email: "",
     phone: "",
   });
+
+  useEffect(() => {
+    let active = true;
+    const loadBookingDetails = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const [authResult, vehicleResult, tariffResult, packageResult] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase.from("vehicles").select("id, name, seats, luggage, image_url").eq("active", true).order("name"),
+          supabase.from("tariffs").select("*").eq("active", true).order("label"),
+          supabase.from("tour_packages").select("*").eq("active", true).order("name"),
+        ]);
+        const failed = [vehicleResult, tariffResult, packageResult].find((result) => result.error);
+        if (authResult.error) throw authResult.error;
+        if (failed?.error) throw failed.error;
+        if (!active) return;
+
+        const user = authResult.data.user;
+        setUserEmail(user?.email || "");
+        setVehicles(vehicleResult.data || []);
+        setTariffs(tariffResult.data || []);
+        setTourPackages(packageResult.data || []);
+        setForm((current) => ({
+          ...current,
+          name: current.name || user?.user_metadata?.full_name || "",
+          email: user?.email || current.email,
+          vehicle: vehicleResult.data?.some((vehicle) => vehicle.id === current.vehicle)
+            ? current.vehicle
+            : vehicleResult.data?.[0]?.id || "",
+        }));
+      } catch {
+        if (active) setCatalogError("Unable to load live vehicles, packages, and fares. Please refresh or send a custom request.");
+      } finally {
+        if (active) setLoadingCatalog(false);
+      }
+    };
+    loadBookingDetails();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (params.get("signedIn") !== "1") return;
@@ -47,40 +128,189 @@ function BookingRequest() {
     return () => { active = false; };
   }, [params]);
 
-  const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+  useEffect(() => {
+    if (!form.vehicle) {
+      setAvailabilityByMonth({});
+      setAvailabilityCheckedMonths({});
+      setAvailabilityLoadingMonth("");
+      setAvailabilityErrors({});
+      return undefined;
+    }
+
+    let active = true;
+    const loadAvailability = async () => {
+      setAvailabilityLoadingMonth(calendarMonth);
+      setAvailabilityErrors((current) => ({ ...current, [calendarMonth]: "" }));
+      try {
+        const [year, month] = calendarMonth.split("-").map(Number);
+        const startDate = `${calendarMonth}-01`;
+        const endDate = dateKey(new Date(year, month, 0));
+        const supabase = createSupabaseBrowserClient();
+        const { data, error } = await supabase.rpc("unavailable_vehicle_dates", {
+          p_vehicle_id: form.vehicle,
+          p_start_date: startDate,
+          p_end_date: endDate,
+        });
+        if (error) throw error;
+        if (active) {
+          setAvailabilityByMonth((current) => ({
+            ...current,
+            [calendarMonth]: (data || []).map((row) => row.unavailable_date),
+          }));
+          setAvailabilityCheckedMonths((current) => ({ ...current, [calendarMonth]: true }));
+        }
+      } catch {
+        if (active) {
+          setAvailabilityErrors((current) => ({
+            ...current,
+            [calendarMonth]: "Unable to check availability for this vehicle. Choose no specific vehicle or try again.",
+          }));
+        }
+      } finally {
+        if (active) setAvailabilityLoadingMonth("");
+      }
+    };
+    loadAvailability();
+    return () => { active = false; };
+  }, [availabilityAttempt, calendarMonth, form.vehicle]);
+
+  const minimumPickupTimestamp = Math.ceil((Date.now() + 24 * 60 * 60 * 1000) / 60000) * 60000;
+  const minimumPickup = new Date(minimumPickupTimestamp);
+  const minimumPickupDate = dateKey(minimumPickup);
+  const minimumPickupTime = `${String(minimumPickup.getHours()).padStart(2, "0")}:${String(minimumPickup.getMinutes()).padStart(2, "0")}`;
+  const pickupDateTime = form.date && form.time ? new Date(`${form.date}T${form.time}`) : null;
+  const pickupHas24HoursNotice = Boolean(
+    pickupDateTime && !Number.isNaN(pickupDateTime.getTime())
+      && pickupDateTime.getTime() >= Date.now() + 24 * 60 * 60 * 1000,
+  );
+  const selectedDateMonth = form.date.slice(0, 7);
+  const selectedDateUnavailable = (availabilityByMonth[selectedDateMonth] || []).includes(form.date);
+  const selectedDateAvailabilityError = availabilityErrors[selectedDateMonth] || "";
+  const availabilityAllowsBooking = !form.vehicle || (
+    availabilityCheckedMonths[selectedDateMonth]
+    && !selectedDateUnavailable
+    && !selectedDateAvailabilityError
+    && availabilityLoadingMonth !== selectedDateMonth
+  );
+  const calendarAvailabilityLoading = Boolean(form.vehicle)
+    && !availabilityErrors[calendarMonth]
+    && (!availabilityCheckedMonths[calendarMonth] || availabilityLoadingMonth === calendarMonth);
+
+  const update = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === "service" && value !== "tour" ? { tourPackageId: "" } : {}),
+    }));
+    if (field === "pickup" || field === "dropoff") {
+      routeRequestId.current += 1;
+      setRoute(null);
+      setRouteError("");
+      setCalculatingRoute(false);
+    }
+    if (field === "date") setCalendarMonth(value.slice(0, 7));
+    if (field === "vehicle" && value !== form.vehicle) {
+      setAvailabilityByMonth({});
+      setAvailabilityCheckedMonths({});
+      setAvailabilityErrors({});
+      setAvailabilityLoadingMonth("");
+      setAvailabilityAttempt(0);
+    }
+    if (field === "vehicle" || field === "service" || field === "tourPackageId") setRouteError("");
+  };
   const toggleExtra = (id) => setForm((current) => ({
     ...current,
     extras: current.extras.includes(id) ? current.extras.filter((item) => item !== id) : [...current.extras, id],
   }));
+
+  const calculateRoute = async () => {
+    const requestId = ++routeRequestId.current;
+    const pickup = form.pickup;
+    const dropoff = form.dropoff;
+    setCalculatingRoute(true);
+    setRouteError("");
+    try {
+      const response = await fetch("/api/route-distance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pickup, dropoff }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to calculate this route.");
+      if (requestId === routeRequestId.current) setRoute(result);
+    } catch (error) {
+      if (requestId === routeRequestId.current) {
+        setRoute(null);
+        setRouteError(error.message || "Unable to calculate this route.");
+      }
+    } finally {
+      if (requestId === routeRequestId.current) setCalculatingRoute(false);
+    }
+  };
+
+  const selectedVehicle = vehicles.find((vehicle) => vehicle.id === form.vehicle);
+  const selectedPackage = tourPackages.find((item) => item.id === form.tourPackageId);
+  const matchingTariffs = tariffs.filter((tariff) => tariff.service_type === TARIFF_SERVICE[form.service]);
+  const selectedTariff = matchingTariffs.find((tariff) => tariff.vehicle_id === form.vehicle)
+    || matchingTariffs.find((tariff) => !tariff.vehicle_id);
+  const extrasTotal = EXTRAS
+    .filter((extra) => form.extras.includes(extra.id))
+    .reduce((sum, extra) => sum + (Number(extra.price) || 0), 0);
+  const fareBeforeExtras = selectedPackage
+    ? Number(selectedPackage.price)
+    : selectedTariff && !(form.service === "hourly" && Number(selectedTariff.per_hour) > 0)
+      ? Number(selectedTariff.per_km) > 0 && !route
+        ? null
+        : Math.max(
+          Number(selectedTariff.min_fare) || 0,
+          (Number(selectedTariff.base_fee) || 0) + (Number(selectedTariff.per_km) || 0) * (route?.distanceKm || 0),
+        )
+      : null;
+  const estimatedSubtotal = fareBeforeExtras === null ? null : fareBeforeExtras + extrasTotal;
+  const vatRate = Number(selectedTariff?.vat_pct ?? 10) || 0;
+  const estimatedTotal = estimatedSubtotal === null ? null : estimatedSubtotal * (1 + vatRate / 100);
 
   const submitBooking = async (event) => {
     event.preventDefault();
     setSaving(true);
     setSubmitError("");
     try {
-      const selectedVehicle = VEHICLES.find((vehicle) => vehicle.id === form.vehicle);
+      const selectedVehicle = vehicles.find((vehicle) => vehicle.id === form.vehicle);
       const selectedExtras = EXTRAS.filter((extra) => form.extras.includes(extra.id));
       const booking = await createBooking({
         ...form,
+        vehicleId: selectedVehicle?.id,
         vehicleName: selectedVehicle?.name,
+        tourPackageName: selectedPackage?.name,
+        distanceKm: route?.distanceKm,
         extrasDetails: selectedExtras,
         paymentStatus: form.payment === "later" ? "pay-later" : "pending",
       });
       setConfirmation(booking.reference);
-    } catch {
-      setSubmitError("We couldn't save your request. Check that you are signed in, then try again.");
+    } catch (error) {
+      if (error?.message?.includes("24 hours in advance")) {
+        setSubmitError("Bookings must be made at least 24 hours in advance.");
+        setStep(1);
+      } else if (error?.message?.includes("Vehicle is unavailable on the selected date")) {
+        setSubmitError("That vehicle is no longer available on this date. Please choose another date or vehicle.");
+        setStep(1);
+      } else {
+        setSubmitError("We couldn't save your request. Check that you are signed in, then try again.");
+      }
     } finally {
       setSaving(false);
     }
   };
 
   const canContinue = step === 1
-    ? Boolean(form.pickup && form.dropoff && form.date && form.time)
+    ? Boolean(form.pickup && form.dropoff && form.date && form.time
+      && !loadingCatalog
+      && pickupHas24HoursNotice
+      && availabilityAllowsBooking
+      && (form.service !== "tour" || form.tourPackageId || !tourPackages.length))
     : step === 4
-      ? Boolean(form.name && form.email)
+      ? Boolean(form.name && form.email && pickupHas24HoursNotice && availabilityAllowsBooking)
       : true;
-
-  const selectedVehicle = VEHICLES.find((vehicle) => vehicle.id === form.vehicle);
 
   if (confirmation) {
     return (
@@ -134,15 +364,56 @@ function BookingRequest() {
                   </button>
                 ))}
               </div>
+              {loadingCatalog && <p className="booking-catalog-loading" role="status">Loading live vehicles, packages, and fares...</p>}
+              {form.service === "tour" && tourPackages.length > 0 && (
+                <div className="vehicle-choice vehicle-choice--packages">
+                  {tourPackages.map((item) => (
+                    <button type="button" key={item.id} className={form.tourPackageId === item.id ? "is-selected" : ""} onClick={() => update("tourPackageId", item.id)}>
+                      <div><p>{item.duration_hours} hours</p><h3>{item.name}</h3><small>{item.description}{item.itinerary ? ` · ${item.itinerary}` : ""}</small></div>
+                      <strong>{currency(Number(item.price))}</strong>
+                      <span className="vehicle-choice__check" aria-hidden="true">✓</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="wizard-grid">
                 <label className="wizard-field wizard-field--wide"><span>Pick-up location</span><div className="location-field"><input value={form.pickup} onChange={(event) => update("pickup", event.target.value)} placeholder="Hotel, airport or address" required /><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.pickup || "Italy")}`} target="_blank" rel="noreferrer">Pick from map</a></div></label>
                 <label className="wizard-field"><span>Destination</span><input value={form.dropoff} onChange={(event) => update("dropoff", event.target.value)} placeholder="Where to?" required /></label>
-                <label className="wizard-field"><span>Date</span><div className="wizard-picker"><input ref={dateInput} type="date" value={form.date} onChange={(event) => update("date", event.target.value)} min={new Date().toISOString().slice(0, 10)} required /><button type="button" aria-label="Open date picker" onClick={() => openPicker(dateInput.current)}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button></div></label>
-                <label className="wizard-field"><span>Time</span><div className="wizard-picker"><input ref={timeInput} type="time" value={form.time} onChange={(event) => update("time", event.target.value)} required /><button type="button" aria-label="Open time picker" onClick={() => openPicker(timeInput.current)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button></div></label>
+                <div className="wizard-field"><span>Pick-up date</span><AvailabilityDatePicker
+                  value={form.date}
+                  onChange={(value) => update("date", value)}
+                  minDate={minimumPickupDate}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
+                  unavailableDates={availabilityByMonth[calendarMonth] || []}
+                  loading={calendarAvailabilityLoading}
+                  error={availabilityErrors[calendarMonth]}
+                /></div>
+                <label className="wizard-field"><span>Time <small>Book at least 24 hours ahead</small></span><div className="wizard-picker"><input ref={timeInput} type="time" value={form.time} onChange={(event) => update("time", event.target.value)} min={form.date === minimumPickupDate ? minimumPickupTime : undefined} required /><button type="button" aria-label="Open time picker" onClick={() => openPicker(timeInput.current)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button></div></label>
+                {form.date && form.time && !pickupHas24HoursNotice && <p className="wizard-field__message" role="alert">Choose a pick-up at least 24 hours from now.</p>}
+                {selectedDateUnavailable && <p className="wizard-field__message" role="alert">This vehicle already has a booking on that date. Choose a different date or vehicle.</p>}
+                {(availabilityErrors[calendarMonth] || selectedDateAvailabilityError) && (
+                  <p className="wizard-field__message" role="alert">
+                    {availabilityErrors[calendarMonth] || selectedDateAvailabilityError}
+                    <button className="action-link" type="button" onClick={() => {
+                      if (selectedDateAvailabilityError) setCalendarMonth(selectedDateMonth);
+                      setAvailabilityAttempt((current) => current + 1);
+                    }}>Check again</button>
+                  </p>
+                )}
                 <label className="wizard-field"><span>Passengers</span><select value={form.passengers} onChange={(event) => update("passengers", Number(event.target.value))}>{Array.from({ length: 7 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} {index === 0 ? "passenger" : "passengers"}</option>)}</select></label>
                 <label className="wizard-field"><span>Luggage</span><select value={form.luggage} onChange={(event) => update("luggage", Number(event.target.value))}>{Array.from({ length: 9 }, (_, index) => <option key={index} value={index}>{index} {index === 1 ? "piece" : "pieces"}</option>)}</select></label>
                 <label className="wizard-field"><span>Flight number <small>Optional</small></span><input value={form.flight} onChange={(event) => update("flight", event.target.value)} placeholder="e.g. AZ 204" /></label>
                 <label className="wizard-field wizard-field--wide"><span>Notes for the chauffeur <small>Optional</small></span><textarea value={form.notes} onChange={(event) => update("notes", event.target.value)} rows="3" placeholder="Anything we should know?" /></label>
+                <label className="wizard-field wizard-field--wide"><span>Special request or question for our team <small>Optional</small></span><textarea value={form.specialRequest} onChange={(event) => update("specialRequest", event.target.value)} rows="3" placeholder="Tell us what you need; our team can prepare a tailored fare." /></label>
+              </div>
+              <div className="route-estimate">
+                <button className="btn btn--ghost" type="button" disabled={!form.pickup || !form.dropoff || calculatingRoute} onClick={calculateRoute}>
+                  {calculatingRoute ? "Calculating route..." : "Calculate route & estimate"}
+                </button>
+                <p>Pickup and destination are sent to OpenStreetMap and OSRM to calculate the route.</p>
+                {route && <p>{route.distanceKm} km driving distance · {route.attribution}</p>}
+                {routeError && <p role="alert">{routeError}</p>}
               </div>
             </div>
           )}
@@ -151,14 +422,19 @@ function BookingRequest() {
             <div className="wizard-step">
               <div className="wizard-step__heading"><span>02</span><div><p>Choose your vehicle</p><h2>Select from the available fleet.</h2></div></div>
               <div className="vehicle-choice">
-                {VEHICLES.map((vehicle) => (
+                <button type="button" className={`vehicle-choice__custom${!form.vehicle ? " is-selected" : ""}`} onClick={() => update("vehicle", "")}>
+                  <div><p>Custom request</p><h3>No specific vehicle</h3><small>Our team will confirm the vehicle and fare.</small></div>
+                  <span className="vehicle-choice__check" aria-hidden="true">✓</span>
+                </button>
+                {vehicles.map((vehicle) => (
                   <button type="button" key={vehicle.id} className={form.vehicle === vehicle.id ? "is-selected" : ""} onClick={() => update("vehicle", vehicle.id)}>
-                    <img src={vehicle.image} alt={vehicle.name} />
-                    <div><p>{vehicle.note}</p><h3>{vehicle.name}</h3><small>{vehicle.passengers} passengers · {vehicle.luggage} luggage</small></div>
+                    <img src={vehicle.image_url || "/scenes/ext_r.webp"} alt={vehicle.name} />
+                    <div><p>Available fleet</p><h3>{vehicle.name}</h3><small>{vehicle.seats} passengers · {vehicle.luggage} luggage</small></div>
                     <span className="vehicle-choice__check" aria-hidden="true">✓</span>
                   </button>
                 ))}
               </div>
+              {!vehicles.length && <p>No vehicles are currently configured. You can still submit a custom request.</p>}
             </div>
           )}
 
@@ -187,7 +463,7 @@ function BookingRequest() {
               </div>
               <div className="wizard-grid wizard-contact">
                 <label className="wizard-field"><span>Full name</span><input value={form.name} onChange={(event) => update("name", event.target.value)} autoComplete="name" required /></label>
-                <label className="wizard-field"><span>Email address</span><input type="email" value={form.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" required /></label>
+                <label className="wizard-field"><span>Email address</span><input type="email" value={form.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" readOnly={Boolean(userEmail)} required /></label>
                 <label className="wizard-field wizard-field--wide"><span>Phone number</span><input type="tel" value={form.phone} onChange={(event) => update("phone", event.target.value)} autoComplete="tel" /></label>
               </div>
             </div>
@@ -202,13 +478,20 @@ function BookingRequest() {
             <div><dt>Date & time</dt><dd>{form.date || "Choose date"}{form.time ? ` · ${form.time}` : ""}</dd></div>
             <div><dt>Guests</dt><dd>{form.passengers} passengers · {form.luggage} luggage</dd></div>
             <div><dt>Vehicle</dt><dd>{selectedVehicle?.name}</dd></div>
+            {route && <div><dt>Route distance</dt><dd>{route.distanceKm} km</dd></div>}
+            {selectedPackage && <div><dt>Package</dt><dd>{selectedPackage.name}</dd></div>}
             {form.extras.length > 0 && <div><dt>Extras</dt><dd>{EXTRAS.filter((item) => form.extras.includes(item.id)).map((item) => item.name).join(", ")}</dd></div>}
           </dl>
-          <div className="booking-summary__total"><span>Estimated total</span><strong>To be confirmed</strong></div>
+          <div className="booking-summary__total"><span>Estimated total{estimatedSubtotal !== null ? ` (incl. ${vatRate}% VAT)` : ""}</span><strong>{estimatedTotal === null ? (selectedTariff && Number(selectedTariff.per_km) > 0 && !route ? "Calculate route" : "Request a quote") : currency(estimatedTotal)}</strong></div>
+          {estimatedSubtotal !== null && <small className="booking-summary__note">Estimate only; the final fare is confirmed by our team.</small>}
+          <small className="booking-summary__note">Route calculation uses OpenStreetMap and OSRM.</small>
         </aside>
 
         <footer className="booking-wizard__footer">
+          {catalogError && <p className="admin-login__error" role="alert">{catalogError}</p>}
           {submitError && <p className="admin-login__error" role="alert">{submitError}</p>}
+          {step === 4 && !pickupHas24HoursNotice && <p className="admin-login__error" role="alert">Your pick-up must be at least 24 hours from now. Go back to choose a later time.</p>}
+          {step === 4 && form.vehicle && !availabilityAllowsBooking && <p className="admin-login__error" role="alert">Vehicle availability must be confirmed for this date before booking.</p>}
           {step > 1 && <button type="button" className="wizard-back" onClick={() => setStep((current) => current - 1)}>Back</button>}
           {step < 4
             ? <button type="button" className="btn btn--solid" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>Continue<span aria-hidden="true"> →</span></button>

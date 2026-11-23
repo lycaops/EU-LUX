@@ -54,6 +54,10 @@ This project uses Next.js 14 and Supabase Auth for administrator access. The ste
 
 Customers can create an account or sign in at `/account/login`; new users receive the `customer` role through the profile trigger. The `/account` route checks the Supabase session and customer role on the server. Customers must sign in before accessing `/book`; submitted requests are saved in Supabase and are visible to the customer and administrators.
 
+The booking form loads active vehicles, fares, and tour packages from Supabase. It can calculate driving distance with OpenStreetMap Nominatim and the public OSRM demo service; pickup and destination addresses are sent to those providers. This no-key option is rate-limited, has no service guarantee, and is suitable only for low-volume estimates. Set `ROUTING_CONTACT_EMAIL` to an address monitored by the site operator. Use a hosted routing provider with an appropriate service agreement before relying on estimates at production scale.
+
+Customer bookings require at least 24 hours' notice. The date picker grays out dates already reserved for the selected vehicle; each vehicle is treated as unavailable for the full calendar date in Europe/Rome time. Supabase rechecks availability when a booking is saved, preventing two customers from reserving the same vehicle/date concurrently.
+
 ### 3. Deploy with Vercel
 
 1. Push the project to a Git provider supported by Vercel, then import that repository into Vercel.
@@ -69,11 +73,11 @@ Customers can create an account or sign in at `/account/login`; new users receiv
 
 The middleware and server-rendered `/admin` page both verify the Supabase user and the `profiles.role` value. Missing configuration, missing profiles, and non-admin accounts are denied access. The SQL RLS policies are a second authorization boundary for database access. Security headers are configured in `next.config.mjs`; HSTS is sent in production.
 
-The protected admin workspace provides separate pages for the **Booking desk** (`/admin/bookings`), **Booking configuration** (`/admin/booking-configuration`), and the **Admin panel** (`/admin`), which manages live fare tariffs (including a per-kilometre rate) and tour packages. Run the current `supabase/schema.sql` in the Supabase SQL Editor to create or update the tables and policies, then sign in with an account whose profile role is `admin`.
+The protected admin workspace provides separate pages for the **Booking desk** (`/admin/bookings`), **Booking configuration** (`/admin/booking-configuration`), and the **Admin panel** (`/admin`), which manages live fare tariffs (including a per-kilometre rate) and tour packages. The booking desk lets admins prepare a fare breakdown and send it to the customer's account, where the customer can accept it. Run the current `supabase/schema.sql` in the Supabase SQL Editor to create or update the tables and policies, then sign in with an account whose profile role is `admin`.
 
 ## Important production limitation
 
-The booking form, customer booking dashboard, and admin booking management are connected to the Supabase `bookings` table and protected by row-level security. Customers must be authenticated; anonymous booking inserts remain intentionally disabled. Booking option configuration (`lib/bookingConfig.js`) is still browser-local, while tariff and tour-package settings are database-backed.
+The booking form, customer booking dashboard, and admin booking management are connected to the Supabase `bookings` table and protected by row-level security. Customers must be authenticated; anonymous booking inserts remain intentionally disabled. Services, extras, and payment choices in `lib/bookingConfig.js` are still browser-local; active vehicles, tariffs, and tour packages are database-backed. Admin-issued fare breakdowns are shown in the account portal; email delivery and online payment collection are not configured.
 
 ## Project
 
