@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const isConfigured = Boolean(
@@ -14,7 +13,6 @@ const ERROR_MESSAGES = {
 };
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -72,8 +70,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.replace("/admin?signedIn=1");
-      router.refresh();
+      window.location.assign("/admin?signedIn=1");
     } catch {
       setError("Unable to contact the sign-in service. Please try again.");
     } finally {

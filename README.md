@@ -69,9 +69,11 @@ Customers can create an account or sign in at `/account/login`; new users receiv
 
 The middleware and server-rendered `/admin` page both verify the Supabase user and the `profiles.role` value. Missing configuration, missing profiles, and non-admin accounts are denied access. The SQL RLS policies are a second authorization boundary for database access. Security headers are configured in `next.config.mjs`; HSTS is sent in production.
 
+The admin panel manages live fare tariffs (including a per-kilometre rate) and tour packages in Supabase. Run the current `supabase/schema.sql` in the Supabase SQL Editor to add the tour-package table and policies, then sign in with an account whose profile role is `admin`.
+
 ## Important production limitation
 
-The booking form, customer account, admin booking list, and booking configuration are still a browser-only demo stored in `localStorage` (`lib/bookings.js` and `lib/bookingConfig.js`). Customer sign-in gates the account route, but these demo bookings are not connected to Supabase or isolated by customer identity. Browser-local data is not shared with the business or other users. The SQL intentionally does not allow anonymous guests to insert bookings. Do not accept real bookings or customer personal data with this demo; a validated, rate-limited server booking flow and database-backed dashboards are required first.
+The public booking form and customer account bookings are still a browser-only demo stored in `localStorage` (`lib/bookings.js` and `lib/bookingConfig.js`). They are not connected to Supabase or isolated by customer identity, and browser-local data is not shared with the business or other users. The SQL intentionally does not allow anonymous guests to insert bookings. Do not accept real bookings or customer personal data with this demo; a validated, rate-limited server booking flow and database-backed customer dashboards are required first. The admin panel's tariff and tour-package settings are database-backed, but those settings are not yet wired into the demo booking form.
 
 ## Project
 

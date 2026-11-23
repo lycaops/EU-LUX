@@ -65,6 +65,19 @@ create table if not exists public.tariffs (
   vat_pct numeric(5,2) not null default 10,
   active boolean not null default true
 );
+alter table public.tariffs add column if not exists per_km numeric(10,2) not null default 0;
+
+-- Tour packages ----------------------------------------------------------
+create table if not exists public.tour_packages (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text not null default '',
+  itinerary text not null default '',
+  duration_hours numeric(6,2) not null default 1 check (duration_hours > 0),
+  price numeric(10,2) not null default 0 check (price >= 0),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
 
 -- Fixed routes (airport transfers etc.) ----------------------------------
 create table if not exists public.fixed_routes (
@@ -128,6 +141,7 @@ create table if not exists public.booking_extras (
 alter table public.profiles enable row level security;
 alter table public.vehicles enable row level security;
 alter table public.tariffs enable row level security;
+alter table public.tour_packages enable row level security;
 alter table public.fixed_routes enable row level security;
 alter table public.extras enable row level security;
 alter table public.bookings enable row level security;
@@ -148,6 +162,10 @@ drop policy if exists "read tariffs" on public.tariffs;
 drop policy if exists "admin tariffs" on public.tariffs;
 create policy "read tariffs" on public.tariffs for select using (active or public.is_admin());
 create policy "admin tariffs" on public.tariffs for all using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "read tour packages" on public.tour_packages;
+drop policy if exists "admin tour packages" on public.tour_packages;
+create policy "read tour packages" on public.tour_packages for select using (active or public.is_admin());
+create policy "admin tour packages" on public.tour_packages for all using (public.is_admin()) with check (public.is_admin());
 drop policy if exists "read routes" on public.fixed_routes;
 drop policy if exists "admin routes" on public.fixed_routes;
 create policy "read routes" on public.fixed_routes for select using (active or public.is_admin());
