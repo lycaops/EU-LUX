@@ -74,9 +74,16 @@ export default function Cinematic() {
         const mobile = window.innerWidth < 800;
         const tablet = window.innerWidth < 1100;
         const last = STEPS.length - 1;
+        // On small screens the van is kept large and anchored low in the frame so it
+        // reads clearly against the background instead of shrinking away from it.
+        const MOBILE_POSES = {
+          0: { x: "0vw", y: "5vh", scale: 1.16 }, // hero
+          1: { x: "0vw", y: "10vh", scale: 1.3 }, // arrival
+          4: { x: "0vw", y: "9vh", scale: 1.1 },  // experience
+        };
         const poseForStep = (i) => {
+          if (mobile && MOBILE_POSES[i]) return { ...POSES[i], ...MOBILE_POSES[i] };
           if (i > 1) return POSES[i];
-          if (mobile) return { ...POSES[i], x: "0vw", y: i === 0 ? "5vh" : "2vh", scale: i === 0 ? 1.16 : 0.68 };
           if (tablet) return { ...POSES[i], x: i === 0 ? "-18vw" : "-8vw", y: i === 0 ? "4vh" : "2vh", scale: i === 0 ? 0.6 : 0.88 };
           return POSES[i];
         };

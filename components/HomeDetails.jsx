@@ -1,6 +1,23 @@
 "use client";
 
 import { useLang } from "./LanguageProvider";
+import {
+  IconArrowUpRight,
+  IconUsers,
+  IconLuggage,
+  IconSofa,
+  IconClimate,
+  IconBag,
+  IconPlane,
+  IconBuilding,
+  IconBriefcase,
+  IconMap,
+  IconClock,
+  IconHeart,
+} from "./Icons";
+
+const CABIN_ICONS = [IconSofa, IconClimate, IconBag];
+const SERVICE_ICONS = [IconPlane, IconBuilding, IconBriefcase, IconMap, IconClock, IconHeart];
 
 export default function HomeDetails() {
   const { t } = useLang();
@@ -16,10 +33,10 @@ export default function HomeDetails() {
             <p className="home-detail__intro">{t.s3.body}</p>
             <h3 className="fleet-detail__model">Mercedes-Benz V-Class V250</h3>
             <dl className="fleet-specs">
-              <div><dt>{t.booking.pax}</dt><dd>7</dd></div>
-              <div><dt>{details.luggage}</dt><dd>7</dd></div>
+              <div><dt><IconUsers />{t.booking.pax}</dt><dd>7</dd></div>
+              <div><dt><IconLuggage />{details.luggage}</dt><dd>7</dd></div>
             </dl>
-            <a className="btn btn--ghost detail-cta" href="/book">{t.nav.book}<span aria-hidden="true"> ↗</span></a>
+            <a className="btn btn--ghost detail-cta" href="/book">{t.nav.book}<IconArrowUpRight /></a>
           </div>
           <figure className="fleet-detail__vehicle">
             <img src="/scenes/ext_r.webp" alt="Mercedes-Benz V-Class V250 executive van" loading="lazy" />
@@ -41,9 +58,12 @@ export default function HomeDetails() {
               <figcaption>V-Class · Passenger cabin</figcaption>
             </figure>
             <ul className="interior-features">
-              {details.cabinFeatures.map((feature, index) => (
-                <li key={feature}><span>0{index + 1}</span><strong>{feature}</strong></li>
-              ))}
+              {details.cabinFeatures.map((feature, index) => {
+                const Icon = CABIN_ICONS[index % CABIN_ICONS.length];
+                return (
+                  <li key={feature}><span aria-hidden="true"><Icon /></span><strong>{feature}</strong></li>
+                );
+              })}
             </ul>
           </div>
         </div>
@@ -57,15 +77,18 @@ export default function HomeDetails() {
             <p className="home-detail__intro">{t.s6.body}</p>
           </header>
           <div className="service-list">
-            {details.services.map((service, index) => (
-              <article className="service-item" key={service.title}>
-                <span className="service-item__number">0{index + 1}</span>
-                <h3>{service.title}</h3>
-                <p>{service.body}</p>
-              </article>
-            ))}
+            {details.services.map((service, index) => {
+              const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
+              return (
+                <article className="service-item" key={service.title}>
+                  <span className="service-item__number" aria-hidden="true"><Icon /></span>
+                  <h3>{service.title}</h3>
+                  <p>{service.body}</p>
+                </article>
+              );
+            })}
           </div>
-          <a className="btn btn--solid detail-cta" href="/book">{t.nav.book}<span aria-hidden="true"> ↗</span></a>
+          <a className="btn btn--solid detail-cta" href="/book">{t.nav.book}<IconArrowUpRight /></a>
         </div>
       </section>
     </div>

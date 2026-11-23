@@ -214,6 +214,7 @@ html[dir="rtl"] .booking label { letter-spacing: 0; font-size: 0.85rem; }
   .scene-text--s6 { top: 10%; }
   .scene-text--s7 { top: 8%; }
   .scene-text--s4 h2, .scene-text--s5 h2, .scene-text--s6 h2, .scene-text--s7 h2 { font-size: clamp(2.2rem, 7vw, 3.8rem); }
+  .van-reflection { bottom: 4%; width: min(92vw, 860px); }
 }
 @media (min-width: 801px) and (max-width: 1099px) {
   .scene-text--s1 { top: 0; bottom: 0; padding-top: 28vh; inset-inline-start: 65%; inset-inline-end: 3%; }
@@ -264,7 +265,7 @@ html[dir="rtl"] .footer h4 { letter-spacing: 0; font-size: 0.95rem; }
 .interior-feature img { width: 100%; aspect-ratio: 1.5; object-fit: cover; }
 .interior-feature figcaption { padding-top: 0.6rem; color: rgba(255,255,255,0.55); font-size: 0.68rem; }
 .interior-features { list-style: none; border-top: 1px solid rgba(229,205,155,0.28); }
-.interior-features li { display: flex; gap: 1rem; align-items: baseline; padding: 1.2rem 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.interior-features li { display: flex; gap: 1rem; align-items: center; padding: 1.2rem 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
 .interior-features li span, .service-item__number { color: var(--gold); font-family: var(--serif); font-size: 1rem; }
 .interior-features li strong { color: rgba(255,255,255,0.9); font-size: 0.9rem; font-weight: 400; }
 .services-detail { background: #15140f; }
@@ -471,7 +472,7 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 .availability-picker__calendar { position: absolute; z-index: 20; inset-block-start: calc(100% + 0.4rem); inset-inline-start: 0; width: min(340px, calc(100vw - 3rem)); padding: 0.8rem; border: 1px solid var(--line); background: #141412; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
 .availability-picker__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.7rem; }
 .availability-picker__header strong { color: var(--champagne); font-family: var(--serif); font-size: 1rem; font-weight: 500; }
-.availability-picker__header button { width: 32px; height: 32px; border: 1px solid var(--line); background: transparent; color: var(--champagne); font: inherit; font-size: 1.25rem; cursor: pointer; }
+.availability-picker__header button { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--line); background: transparent; color: var(--champagne); font: inherit; font-size: 1.25rem; cursor: pointer; }
 .availability-picker__header button:disabled { opacity: 0.35; cursor: not-allowed; }
 .availability-picker__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.2rem; }
 .availability-picker__grid > span { display: grid; min-height: 34px; place-items: center; color: var(--muted); font-size: 0.62rem; }
@@ -664,3 +665,21 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 @media (max-width: 420px) {
   .booking-card__actions { grid-template-columns: 1fr; }
 }
+
+/* Icons */
+.icon { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; flex: none; }
+.btn .icon { width: 0.95em; height: 0.95em; margin-inline-start: 0.5em; vertical-align: -0.12em; }
+.detail-cta .icon { width: 11px; height: 11px; }
+.fleet-specs dt { display: inline-flex; align-items: center; gap: 0.45rem; }
+.fleet-specs dt .icon { width: 15px; height: 15px; color: var(--gold); }
+.interior-features li span { display: grid; place-items: center; }
+.interior-features li span .icon { width: 20px; height: 20px; }
+.service-item__number .icon { width: 24px; height: 24px; }
+.auth-card__back { display: inline-flex; align-items: center; }
+.auth-card__back .icon { width: 12px; height: 12px; margin-inline-end: 0.45rem; }
+.workspace__search .icon { width: 16px; height: 16px; }
+.workspace__notice button { display: grid; place-items: center; }
+.workspace__notice button .icon { width: 15px; height: 15px; }
+.workspace__empty > span .icon { width: 30px; height: 30px; }
+.availability-picker__header button .icon { width: 16px; height: 16px; }
+.vehicle-choice__check .icon { width: 15px; height: 15px; }

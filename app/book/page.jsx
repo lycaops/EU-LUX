@@ -7,6 +7,7 @@ import { getBookingConfig } from "@/lib/bookingConfig";
 import { getSignInGreeting } from "@/lib/supabase/greeting";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import AvailabilityDatePicker from "@/components/AvailabilityDatePicker";
+import { IconArrowRight, IconCheck } from "@/components/Icons";
 
 const TARIFF_SERVICE = { transfer: "transfer", hourly: "hourly", tour: "daily" };
 const currency = (amount) => new Intl.NumberFormat(undefined, { style: "currency", currency: "EUR" }).format(amount);
@@ -418,7 +419,7 @@ function BookingRequest() {
                         )}
                       </div>
                       <strong>{currency(Number(item.price))}</strong>
-                      <span className="vehicle-choice__check" aria-hidden="true">✓</span>
+                      <span className="vehicle-choice__check"><IconCheck /></span>
                     </button>
                   ))}
                 </div>
@@ -485,13 +486,13 @@ function BookingRequest() {
               <div className="vehicle-choice">
                 <button type="button" className={`vehicle-choice__custom${!form.vehicle ? " is-selected" : ""}`} onClick={() => update("vehicle", "")}>
                   <div><p>Custom request</p><h3>No specific vehicle</h3><small>Our team will confirm the vehicle and fare.</small></div>
-                  <span className="vehicle-choice__check" aria-hidden="true">✓</span>
+                  <span className="vehicle-choice__check"><IconCheck /></span>
                 </button>
                 {vehicles.map((vehicle) => (
                   <button type="button" key={vehicle.id} className={form.vehicle === vehicle.id ? "is-selected" : ""} onClick={() => update("vehicle", vehicle.id)}>
                     <img src={vehicle.image_url || "/scenes/ext_r.webp"} alt={vehicle.name} />
                     <div><p>Available fleet</p><h3>{vehicle.name}</h3><small>{vehicle.seats} passengers · {vehicle.luggage} luggage</small></div>
-                    <span className="vehicle-choice__check" aria-hidden="true">✓</span>
+                    <span className="vehicle-choice__check"><IconCheck /></span>
                   </button>
                 ))}
               </div>
@@ -556,8 +557,8 @@ function BookingRequest() {
           {step === 4 && form.vehicle && !availabilityAllowsBooking && <p className="admin-login__error" role="alert">Vehicle availability must be confirmed for this date before booking.</p>}
           {step > 1 && <button type="button" className="wizard-back" onClick={() => setStep((current) => current - 1)}>Back</button>}
           {step < 4
-            ? <button type="button" className="btn btn--solid" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>Continue<span aria-hidden="true"> →</span></button>
-            : <button type="button" className="btn btn--solid" disabled={!canContinue || saving} onClick={submitBooking}>{saving ? "Confirming..." : "Confirm booking"}<span aria-hidden="true"> →</span></button>}
+            ? <button type="button" className="btn btn--solid" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>Continue<IconArrowRight /></button>
+            : <button type="button" className="btn btn--solid" disabled={!canContinue || saving} onClick={submitBooking}>{saving ? "Confirming..." : "Confirm booking"}<IconArrowRight /></button>}
         </footer>
       </form>
     </section>

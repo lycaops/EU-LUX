@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AdminSignOut from "@/components/AdminSignOut";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { IconArrowUpRight } from "@/components/Icons";
 
 const SERVICE_TYPES = ["transfer", "hourly", "daily", "fixed_route"];
 
@@ -183,7 +184,7 @@ export default function AdminOperations() {
         </div>
         <div className="workspace__header-actions">
           <AdminSignOut />
-          <a className="btn btn--solid workspace__new" href="/">View website <span aria-hidden="true">↗</span></a>
+          <a className="btn btn--solid workspace__new" href="/">View website<IconArrowUpRight /></a>
         </div>
       </header>
 

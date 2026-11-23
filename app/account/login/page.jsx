@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { IconArrowLeft } from "@/components/Icons";
 
 const isConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -209,7 +210,7 @@ export default function AccountLoginPage() {
           {!isConfigured && <p className="admin-login__error" role="alert">{ERROR_MESSAGES.configuration}</p>}
           {error && <p className="admin-login__error" role="alert">{error}</p>}
           {success && <p className="admin-login__success" role="status">{success}</p>}
-          <a className="auth-card__back" href="/">← Return to the website</a>
+          <a className="auth-card__back" href="/"><IconArrowLeft />Return to the website</a>
         </div>
       </div>
     </section>

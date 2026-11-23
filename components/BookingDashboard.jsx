@@ -5,6 +5,7 @@ import { getBookings, removeBooking, updateBooking } from "@/lib/bookings";
 import { getSignInGreeting } from "@/lib/supabase/greeting";
 import AdminSignOut from "@/components/AdminSignOut";
 import CustomerSignOut from "@/components/CustomerSignOut";
+import { IconArrowUpRight, IconClose, IconSearch, IconSpark } from "@/components/Icons";
 
 const STATUS_OPTIONS = ["pending", "confirmed", "assigned", "completed", "cancelled"];
 const EMPTY_FILTER = "all";
@@ -194,7 +195,7 @@ export default function BookingDashboard({ admin = false }) {
         <div className="workspace__header-actions">
           {admin && <AdminSignOut />}
           {!admin && <CustomerSignOut />}
-          <a className="btn btn--solid workspace__new" href={admin ? "/" : "/book"}>{admin ? "View website" : "Request a journey"} <span aria-hidden="true">↗</span></a>
+          <a className="btn btn--solid workspace__new" href={admin ? "/" : "/book"}>{admin ? "View website" : "Request a journey"}<IconArrowUpRight /></a>
         </div>
       </header>
 
@@ -206,11 +207,11 @@ export default function BookingDashboard({ admin = false }) {
       </div>
 
       <div className="workspace__toolbar">
-        <label className="workspace__search"><span className="sr-only">Search bookings</span><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, route or reference" /></label>
+        <label className="workspace__search"><span className="sr-only">Search bookings</span><IconSearch /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, route or reference" /></label>
         <label className="workspace__filter"><span className="sr-only">Filter by status</span><select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All statuses</option>{STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}</option>)}</select></label>
       </div>
 
-      {notice && <p className="workspace__notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss message">×</button></p>}
+      {notice && <p className="workspace__notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss message"><IconClose /></button></p>}
       {error && <p className="admin-login__error" role="alert">{error}</p>}
 
       <div className="booking-list">
@@ -291,7 +292,7 @@ export default function BookingDashboard({ admin = false }) {
             )}
           </article>
         )) : (
-          <div className="workspace__empty"><span aria-hidden="true">✳</span><h2>{bookings.length ? "No journeys match" : "Your next journey starts here"}</h2><p>{bookings.length ? "Try a different search or status." : admin ? "New customer requests will appear here." : "Your confirmed and upcoming journeys will appear here."}</p>{!bookings.length && !admin && <a className="btn btn--solid" href="/book">Plan a journey</a>}</div>
+          <div className="workspace__empty"><span aria-hidden="true"><IconSpark /></span><h2>{bookings.length ? "No journeys match" : "Your next journey starts here"}</h2><p>{bookings.length ? "Try a different search or status." : admin ? "New customer requests will appear here." : "Your confirmed and upcoming journeys will appear here."}</p>{!bookings.length && !admin && <a className="btn btn--solid" href="/book">Plan a journey</a>}</div>
         )}
       </div>
       <p className="workspace__footnote">{admin ? "Operations workspace · Booking records are kept up to date in real time." : "Your booking requests are securely stored in your account. Need to change a completed journey? Contact our concierge team."}</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { IconChevronLeft, IconChevronRight } from "./Icons";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -93,9 +94,9 @@ export default function AvailabilityDatePicker({
       {open && (
         <div className="availability-picker__calendar" role="dialog" aria-label="Choose pick-up date">
           <div className="availability-picker__header">
-            <button type="button" aria-label="Previous month" disabled={previousMonthDisabled} onClick={() => changeMonth(-1)}>‹</button>
+            <button type="button" aria-label="Previous month" disabled={previousMonthDisabled} onClick={() => changeMonth(-1)}><IconChevronLeft /></button>
             <strong>{new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(monthDate)}</strong>
-            <button type="button" aria-label="Next month" onClick={() => changeMonth(1)}>›</button>
+            <button type="button" aria-label="Next month" onClick={() => changeMonth(1)}><IconChevronRight /></button>
           </div>
           <div className="availability-picker__grid" aria-hidden="true">
             {WEEKDAYS.map((day) => <span key={day}>{day}</span>)}

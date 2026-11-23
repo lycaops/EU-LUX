@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AdminSignOut from "@/components/AdminSignOut";
 import { getBookingConfig, saveBookingConfig } from "@/lib/bookingConfig";
+import { IconArrowUpRight, IconClose } from "@/components/Icons";
 
 export default function BookingConfiguration() {
   const [bookingConfig, setBookingConfig] = useState(() => getBookingConfig());
@@ -51,11 +52,11 @@ export default function BookingConfiguration() {
         </div>
         <div className="workspace__header-actions">
           <AdminSignOut />
-          <a className="btn btn--solid workspace__new" href="/">View website <span aria-hidden="true">↗</span></a>
+          <a className="btn btn--solid workspace__new" href="/">View website<IconArrowUpRight /></a>
         </div>
       </header>
 
-      {notice && <p className="workspace__notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss message">×</button></p>}
+      {notice && <p className="workspace__notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss message"><IconClose /></button></p>}
       <div className="admin-config admin-config--standalone">
         <div className="admin-config__grid">
           {["services", "vehicles", "extras", "payments"].map((group) => (
