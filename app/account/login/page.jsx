@@ -23,6 +23,11 @@ export default function AccountLoginPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const getNextPath = () => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    return next && next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+  };
+
   useEffect(() => {
     const reason = new URLSearchParams(window.location.search).get("error");
     if (reason && ERROR_MESSAGES[reason]) setError(ERROR_MESSAGES[reason]);
@@ -84,7 +89,8 @@ export default function AccountLoginPage() {
         return;
       }
 
-      router.replace("/account?signedIn=1");
+      const next = getNextPath();
+      router.replace(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
       router.refresh();
     } catch {
       setError("Unable to contact the sign-in service. Please try again.");
@@ -123,7 +129,7 @@ export default function AccountLoginPage() {
       }
 
       if (data.session) {
-        router.replace("/account");
+        router.replace(getNextPath());
         router.refresh();
         return;
       }

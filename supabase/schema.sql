@@ -1,6 +1,6 @@
 -- EU Luxury Tours & Travels: Supabase / Postgres schema.
--- Admin authentication and RLS use this schema. Booking pages remain a local demo;
--- anonymous booking inserts are intentionally not allowed.
+-- Authentication, customer bookings, and admin operations use this schema.
+-- Anonymous booking inserts are intentionally not allowed.
 
 create extension if not exists "pgcrypto";
 
@@ -179,6 +179,7 @@ create policy "admin extras" on public.extras for all using (public.is_admin()) 
 drop policy if exists "own bookings" on public.bookings;
 drop policy if exists "create booking" on public.bookings;
 drop policy if exists "admin update bookings" on public.bookings;
+drop policy if exists "admin delete bookings" on public.bookings;
 drop policy if exists "customers update own bookings" on public.bookings;
 drop policy if exists "customers remove own bookings" on public.bookings;
 create policy "own bookings" on public.bookings for select using (customer_id = auth.uid() or public.is_admin());
@@ -194,6 +195,7 @@ create policy "create booking" on public.bookings for insert with check (
   or public.is_admin()
 );
 create policy "admin update bookings" on public.bookings for update using (public.is_admin()) with check (public.is_admin());
+create policy "admin delete bookings" on public.bookings for delete using (public.is_admin());
 create policy "customers update own bookings" on public.bookings for update
   using (customer_id = auth.uid() and status in ('pending','confirmed'))
   with check (customer_id = auth.uid() and status in ('pending','confirmed','cancelled'));

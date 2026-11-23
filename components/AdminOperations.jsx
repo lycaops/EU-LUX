@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AdminSignOut from "@/components/AdminSignOut";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const SERVICE_TYPES = ["transfer", "hourly", "daily", "fixed_route"];
@@ -176,7 +175,6 @@ export default function AdminOperations() {
           <p className="workspace__intro">Manage live fare tariffs and private tour packages.</p>
         </div>
         <div className="workspace__header-actions">
-          <AdminSignOut />
           <a className="btn btn--solid workspace__new" href="/">View website <span aria-hidden="true">↗</span></a>
         </div>
       </header>

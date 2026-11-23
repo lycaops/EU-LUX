@@ -1,10 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
-function redirectToLogin(request, error, cookies = []) {
+function redirectToLogin(request, loginPath, error, cookies = []) {
   const url = request.nextUrl.clone();
-  url.pathname = "/admin/login";
+  url.pathname = loginPath;
   url.search = "";
+  const next = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  if (next !== loginPath && next !== `${loginPath}?`) {
+    url.searchParams.set("next", next);
+  }
   if (error) url.searchParams.set("error", error);
   const response = NextResponse.redirect(url);
   cookies.forEach(({ name, value, ...options }) => response.cookies.set(name, value, options));
@@ -12,14 +16,17 @@ function redirectToLogin(request, error, cookies = []) {
 }
 
 export async function middleware(request) {
-  if (request.nextUrl.pathname === "/admin/login") {
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  const loginPath = isAdminRoute ? "/admin/login" : "/account/login";
+
+  if (request.nextUrl.pathname === "/admin/login" || request.nextUrl.pathname === "/account/login") {
     return NextResponse.next();
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) {
-    return redirectToLogin(request, "configuration");
+    return redirectToLogin(request, loginPath, "configuration");
   }
 
   let response = NextResponse.next({ request });
@@ -38,7 +45,7 @@ export async function middleware(request) {
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
-    return redirectToLogin(request, null, response.cookies.getAll());
+    return redirectToLogin(request, loginPath, null, response.cookies.getAll());
   }
 
   const { data: profile, error: profileError } = await supabase
@@ -47,13 +54,14 @@ export async function middleware(request) {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profileError || profile?.role !== "admin") {
-    return redirectToLogin(request, "unauthorized", response.cookies.getAll());
+  const requiredRole = isAdminRoute ? "admin" : "customer";
+  if (profileError || profile?.role !== requiredRole) {
+    return redirectToLogin(request, loginPath, "unauthorized", response.cookies.getAll());
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/account/:path*", "/book"],
 };

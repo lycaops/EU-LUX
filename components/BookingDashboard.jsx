@@ -22,10 +22,25 @@ export default function BookingDashboard({ admin = false }) {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [bookingConfig, setBookingConfig] = useState(() => getBookingConfig());
 
   useEffect(() => {
-    const refresh = () => setBookings(getBookings());
+    let active = true;
+    const refresh = async () => {
+      try {
+        const rows = await getBookings();
+        if (active) {
+          setBookings(rows);
+          setError("");
+        }
+      } catch {
+        if (active) setError("Unable to load bookings. Please refresh and try again.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
     refresh();
     const params = new URLSearchParams(window.location.search);
     const created = params.get("created");
@@ -34,13 +49,8 @@ export default function BookingDashboard({ admin = false }) {
         ? "Signed in successfully. You are in the administrator dashboard."
         : "Signed in successfully.");
     }
-    if (created) setNotice(`Request ${created} received. It is saved in this browser demo.`);
-    window.addEventListener("storage", refresh);
-    window.addEventListener("bookings-updated", refresh);
-    return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener("bookings-updated", refresh);
-    };
+    if (created) setNotice(`Request ${created} received.`);
+    return () => { active = false; };
   }, [admin]);
 
   const updateConfigItem = (group, id, field, value) => {
@@ -86,24 +96,42 @@ export default function BookingDashboard({ admin = false }) {
     return all;
   }, {}), [bookings]);
 
-  const changeStatus = (booking, status) => {
-    updateBooking(booking.id, { status });
-    setNotice(`${booking.reference} moved to ${status}.`);
+  const changeStatus = async (booking, status) => {
+    setError("");
+    try {
+      const updated = await updateBooking(booking.id, { status });
+      setBookings((current) => current.map((item) => item.id === booking.id ? updated : item));
+      setNotice(`${booking.reference} moved to ${status}.`);
+    } catch {
+      setError(`Unable to update ${booking.reference}. Please try again.`);
+    }
   };
 
-  const deleteBooking = (booking) => {
+  const deleteBooking = async (booking) => {
     if (!window.confirm(`Remove booking ${booking.reference}? This cannot be undone.`)) return;
-    removeBooking(booking.id);
-    setNotice(`${booking.reference} removed.`);
-    if (editing === booking.id) setEditing(null);
+    setError("");
+    try {
+      await removeBooking(booking.id);
+      setBookings((current) => current.filter((item) => item.id !== booking.id));
+      setNotice(`${booking.reference} removed.`);
+      if (editing === booking.id) setEditing(null);
+    } catch {
+      setError(`Unable to remove ${booking.reference}. Please try again.`);
+    }
   };
 
-  const saveEdit = (event, booking) => {
+  const saveEdit = async (event, booking) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget).entries());
-    updateBooking(booking.id, { ...data, passengers: Number(data.passengers), luggage: Number(data.luggage) });
-    setEditing(null);
-    setNotice(`${booking.reference} updated.`);
+    setError("");
+    try {
+      const updated = await updateBooking(booking.id, { ...data, passengers: Number(data.passengers), luggage: Number(data.luggage) });
+      setBookings((current) => current.map((item) => item.id === booking.id ? updated : item));
+      setEditing(null);
+      setNotice(`${booking.reference} updated.`);
+    } catch {
+      setError(`Unable to update ${booking.reference}. Please try again.`);
+    }
   };
 
   return (
@@ -117,7 +145,7 @@ export default function BookingDashboard({ admin = false }) {
         <div className="workspace__header-actions">
           {admin && <AdminSignOut />}
           {!admin && <CustomerSignOut />}
-          <a className="btn btn--solid workspace__new" href="/">Request a journey <span aria-hidden="true">↗</span></a>
+          <a className="btn btn--solid workspace__new" href={admin ? "/" : "/book"}>{admin ? "View website" : "Request a journey"} <span aria-hidden="true">↗</span></a>
         </div>
       </header>
 
@@ -160,9 +188,10 @@ export default function BookingDashboard({ admin = false }) {
       )}
 
       {notice && <p className="workspace__notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss message">×</button></p>}
+      {error && <p className="admin-login__error" role="alert">{error}</p>}
 
       <div className="booking-list">
-        {visibleBookings.length ? visibleBookings.map((booking) => (
+        {loading ? <div className="workspace__empty"><p>Loading bookings...</p></div> : visibleBookings.length ? visibleBookings.map((booking) => (
           <article className="booking-card" key={booking.id}>
             <div className="booking-card__top">
               <div><span className="booking-card__reference">{booking.reference}</span><span className={`booking-status booking-status--${booking.status}`}>{booking.status}</span></div>
@@ -194,9 +223,9 @@ export default function BookingDashboard({ admin = false }) {
               <div className="booking-card__actions">
                 {admin && booking.status === "pending" && <button className="action-link action-link--accept" type="button" onClick={() => changeStatus(booking, "confirmed")}>Accept request</button>}
                 {admin && <label className="booking-card__status">Update status<select value={booking.status} onChange={(event) => changeStatus(booking, event.target.value)}>{STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}</option>)}</select></label>}
-                {booking.status !== "completed" && booking.status !== "cancelled" && <button className="action-link" type="button" onClick={() => setEditing(booking.id)}>Edit details</button>}
+                {admin && booking.status !== "completed" && booking.status !== "cancelled" && <button className="action-link" type="button" onClick={() => setEditing(booking.id)}>Edit details</button>}
                 {!admin && !["completed", "cancelled"].includes(booking.status) && <button className="action-link action-link--cancel" type="button" onClick={() => changeStatus(booking, "cancelled")}>Cancel journey</button>}
-                <button className="action-link action-link--remove" type="button" onClick={() => deleteBooking(booking)}>Remove</button>
+                {admin && <button className="action-link action-link--remove" type="button" onClick={() => deleteBooking(booking)}>Remove</button>}
               </div>
             )}
           </article>
@@ -204,7 +233,7 @@ export default function BookingDashboard({ admin = false }) {
           <div className="workspace__empty"><span aria-hidden="true">✳</span><h2>{bookings.length ? "No journeys match" : "Your next journey starts here"}</h2><p>{bookings.length ? "Try a different search or status." : admin ? "New customer requests will appear here." : "Your confirmed and upcoming journeys will appear here."}</p>{!bookings.length && !admin && <a className="btn btn--solid" href="/book">Plan a journey</a>}</div>
         )}
       </div>
-      <p className="workspace__footnote">{admin ? "Operations workspace · This browser demo is not connected to a live customer database." : "Browser demo only: bookings are stored on this device and are not sent to our team. Need to change a completed journey? Contact our concierge team."}</p>
+      <p className="workspace__footnote">{admin ? "Operations workspace · Bookings are synced with the secure Supabase database." : "Your booking requests are securely stored in your account. Need to change a completed journey? Contact our concierge team."}</p>
     </section>
   );
 }

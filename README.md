@@ -1,6 +1,6 @@
 # EU Luxury Tours & Travels
 
-Next.js 14 App Router site with Supabase authentication for the administrator area.
+Next.js 14 App Router site with Supabase authentication, customer bookings, and administrator operations.
 
 ## Deployment guide
 
@@ -52,7 +52,7 @@ This project uses Next.js 14 and Supabase Auth for administrator access. The ste
    npm run start
    ```
 
-Customers can create an account or sign in at `/account/login`; new users receive the `customer` role through the profile trigger. The `/account` route checks the Supabase session and customer role on the server. Booking requests can be submitted without an account; confirmation is shown on the public booking page.
+Customers can create an account or sign in at `/account/login`; new users receive the `customer` role through the profile trigger. The `/account` route checks the Supabase session and customer role on the server. Customers must sign in before accessing `/book`; submitted requests are saved in Supabase and are visible to the customer and administrators.
 
 ### 3. Deploy with Vercel
 
@@ -69,11 +69,11 @@ Customers can create an account or sign in at `/account/login`; new users receiv
 
 The middleware and server-rendered `/admin` page both verify the Supabase user and the `profiles.role` value. Missing configuration, missing profiles, and non-admin accounts are denied access. The SQL RLS policies are a second authorization boundary for database access. Security headers are configured in `next.config.mjs`; HSTS is sent in production.
 
-The admin panel manages live fare tariffs (including a per-kilometre rate) and tour packages in Supabase. Run the current `supabase/schema.sql` in the Supabase SQL Editor to add the tour-package table and policies, then sign in with an account whose profile role is `admin`.
+The admin workspace manages customer bookings, live fare tariffs (including a per-kilometre rate), and tour packages. Run the current `supabase/schema.sql` in the Supabase SQL Editor to create or update the tables and policies, then sign in with an account whose profile role is `admin`.
 
 ## Important production limitation
 
-The public booking form and customer account bookings are still a browser-only demo stored in `localStorage` (`lib/bookings.js` and `lib/bookingConfig.js`). They are not connected to Supabase or isolated by customer identity, and browser-local data is not shared with the business or other users. The SQL intentionally does not allow anonymous guests to insert bookings. Do not accept real bookings or customer personal data with this demo; a validated, rate-limited server booking flow and database-backed customer dashboards are required first. The admin panel's tariff and tour-package settings are database-backed, but those settings are not yet wired into the demo booking form.
+The booking form, customer booking dashboard, and admin booking management are connected to the Supabase `bookings` table and protected by row-level security. Customers must be authenticated; anonymous booking inserts remain intentionally disabled. Booking option configuration (`lib/bookingConfig.js`) is still browser-local, while tariff and tour-package settings are database-backed.
 
 ## Project
 

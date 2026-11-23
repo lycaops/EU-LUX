@@ -42,14 +42,14 @@ function BookingRequest() {
     extras: current.extras.includes(id) ? current.extras.filter((item) => item !== id) : [...current.extras, id],
   }));
 
-  const submitBooking = (event) => {
+  const submitBooking = async (event) => {
     event.preventDefault();
     setSaving(true);
     setSubmitError("");
     try {
       const selectedVehicle = VEHICLES.find((vehicle) => vehicle.id === form.vehicle);
       const selectedExtras = EXTRAS.filter((extra) => form.extras.includes(extra.id));
-      const booking = createBooking({
+      const booking = await createBooking({
         ...form,
         vehicleName: selectedVehicle?.name,
         extrasDetails: selectedExtras,
@@ -57,7 +57,7 @@ function BookingRequest() {
       });
       setConfirmation(booking.reference);
     } catch {
-      setSubmitError("We couldn't save your request in this browser. Please try again.");
+      setSubmitError("We couldn't save your request. Check that you are signed in, then try again.");
     } finally {
       setSaving(false);
     }
@@ -74,13 +74,14 @@ function BookingRequest() {
   if (confirmation) {
     return (
       <section className="booking-wizard">
+        {params.get("signedIn") === "1" && <p className="workspace__notice" role="status">Signed in successfully.</p>}
         <header className="booking-wizard__header">
           <div><p>Request saved</p><h1>Your journey request has been saved.</h1></div>
         </header>
         <div className="booking-confirmation">
           <p>Booking reference</p>
           <h2>{confirmation}</h2>
-          <p>This browser-only demo saves your request on this device. You do not need to sign in or create an account to complete it.</p>
+          <p>Your request has been sent to our team. You can track its status from your account.</p>
           <a className="btn btn--solid" href="/">Return to the website</a>
         </div>
       </section>
