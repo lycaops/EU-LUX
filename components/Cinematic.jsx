@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/i18n";
 const BG_FOR_STEP = [0, 0, 1, 2, 4, 5];
 const STEPS = ["s1", "s2", "s3", "s4", "s6", "s7"];
 
-// Van pose per step. Swap /public/v250.png for extra camera angles later.
+// Van pose per step. Swap /public/n_v250.webp for extra camera angles later.
 const POSES = [
   { x: "-13vw", y: "3vh", scale: 0.86, rotationY: 0, opacity: 1 },  // hero
   { x: "-2vw", y: "1vh", scale: 1.02, rotationY: 0, opacity: 1 },  // arrival
@@ -148,7 +148,7 @@ export default function Cinematic() {
         <div className="road" aria-hidden="true" />
         <div className="van-reflection" aria-hidden="true" />
         <div className="van">
-          <img src="/v250.png" alt="Mercedes-Benz V-Class V250" width="1536" height="1024" />
+          <img src="/n_v250.webp" alt="Mercedes-Benz V-Class V250" width="1536" height="1024" />
         </div>
 
         {STEPS.map((key, i) => {
