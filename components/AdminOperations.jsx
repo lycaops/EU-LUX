@@ -18,6 +18,7 @@ function newTariff() {
     label: "",
     base_fee: 0,
     per_km: 0,
+    per_hour: 0,
     min_fare: 0,
     vat_pct: 10,
     active: true,
@@ -30,6 +31,8 @@ function newTourPackage() {
     name: "",
     description: "",
     itinerary: "",
+    pickup_city: "",
+    image_url: "",
     duration_hours: 1,
     price: 0,
     active: true,
@@ -93,13 +96,14 @@ export default function AdminOperations() {
       label: tariff.label.trim(),
       base_fee: Number(tariff.base_fee),
       per_km: Number(tariff.per_km),
+      per_hour: Number(tariff.per_hour),
       min_fare: Number(tariff.min_fare),
       vat_pct: Number(tariff.vat_pct),
       active: tariff.active,
     };
     try {
       if (!payload.label) throw new Error("Enter a tariff name before saving.");
-      if ([payload.base_fee, payload.per_km, payload.min_fare, payload.vat_pct].some((value) => !Number.isFinite(value) || value < 0)) {
+      if ([payload.base_fee, payload.per_km, payload.per_hour, payload.min_fare, payload.vat_pct].some((value) => !Number.isFinite(value) || value < 0)) {
         throw new Error("Fare amounts and VAT must be zero or greater.");
       }
       const supabase = createSupabaseBrowserClient();
@@ -123,6 +127,8 @@ export default function AdminOperations() {
       name: tourPackage.name.trim(),
       description: tourPackage.description.trim(),
       itinerary: tourPackage.itinerary.trim(),
+      pickup_city: tourPackage.pickup_city.trim(),
+      image_url: tourPackage.image_url.trim(),
       duration_hours: Number(tourPackage.duration_hours),
       price: Number(tourPackage.price),
       active: tourPackage.active,
@@ -176,6 +182,8 @@ export default function AdminOperations() {
           <p className="workspace__intro">Manage live fare tariffs and private tour packages.</p>
         </div>
         <div className="workspace__header-actions">
+          <a className="btn btn--ghost" href="/admin/bookings">Booking desk</a>
+          <a className="btn btn--ghost" href="/admin/booking-configuration">Booking configuration</a>
           <AdminSignOut />
           <a className="btn btn--solid workspace__new" href="/">View website <span aria-hidden="true">↗</span></a>
         </div>
@@ -200,6 +208,7 @@ export default function AdminOperations() {
                     <label>Vehicle<select value={tariff.vehicle_id || ""} onChange={(event) => updateRow(setTariffs, tariff.id, "vehicle_id", event.target.value)}><option value="">All vehicles</option>{vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.name}</option>)}</select></label>
                     <label>Base fee (€)<input type="number" min="0" step="0.01" value={tariff.base_fee ?? 0} onChange={(event) => updateRow(setTariffs, tariff.id, "base_fee", event.target.value)} /></label>
                     <label>Rate per km (€)<input type="number" min="0" step="0.01" value={tariff.per_km ?? 0} onChange={(event) => updateRow(setTariffs, tariff.id, "per_km", event.target.value)} /></label>
+                    <label>Hourly rate (€)<input type="number" min="0" step="0.01" value={tariff.per_hour ?? 0} onChange={(event) => updateRow(setTariffs, tariff.id, "per_hour", event.target.value)} /></label>
                     <label>Minimum fare (€)<input type="number" min="0" step="0.01" value={tariff.min_fare ?? 0} onChange={(event) => updateRow(setTariffs, tariff.id, "min_fare", event.target.value)} /></label>
                     <label>VAT (%)<input type="number" min="0" step="0.01" value={tariff.vat_pct ?? 0} onChange={(event) => updateRow(setTariffs, tariff.id, "vat_pct", event.target.value)} /></label>
                     <label className="admin-catalog__active"><input type="checkbox" checked={tariff.active} onChange={(event) => updateRow(setTariffs, tariff.id, "active", event.target.checked)} />Available</label>
@@ -224,6 +233,8 @@ export default function AdminOperations() {
                     <label>Package name<input value={tourPackage.name} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "name", event.target.value)} placeholder="e.g. Tuscan countryside" required /></label>
                     <label>Duration (hours)<input type="number" min="0.5" step="0.5" value={tourPackage.duration_hours ?? 1} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "duration_hours", event.target.value)} /></label>
                     <label>Price (€)<input type="number" min="0" step="0.01" value={tourPackage.price ?? 0} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "price", event.target.value)} /></label>
+                    <label>Starting city<input value={tourPackage.pickup_city || ""} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "pickup_city", event.target.value)} placeholder="e.g. Florence" /></label>
+                    <label>City image URL<input value={tourPackage.image_url || ""} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "image_url", event.target.value)} placeholder="/scenes/..." /></label>
                     <label>Description<textarea rows="2" value={tourPackage.description || ""} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "description", event.target.value)} /></label>
                     <label>Itinerary<textarea rows="3" value={tourPackage.itinerary || ""} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "itinerary", event.target.value)} placeholder="Stops or schedule, one per line" /></label>
                     <label className="admin-catalog__active"><input type="checkbox" checked={tourPackage.active} onChange={(event) => updateRow(setTourPackages, tourPackage.id, "active", event.target.checked)} />Available</label>
@@ -238,7 +249,7 @@ export default function AdminOperations() {
           </>
         )}
       </main>
-      <p className="workspace__footnote">Changes are saved to the live Supabase database. Booking requests are not managed from this panel.</p>
+      <p className="workspace__footnote">Configuration changes are saved live. Booking requests are managed from the Booking desk.</p>
     </section>
   );
 }

@@ -68,6 +68,7 @@ function BookingRequest() {
     time: params.get("time") || "",
     passengers: Number(params.get("pax") || 2),
     luggage: 2,
+    hours: 3,
     flight: "",
     notes: "",
     specialRequest: "",
@@ -226,7 +227,10 @@ function BookingRequest() {
   const calculateRoute = async () => {
     const requestId = ++routeRequestId.current;
     const pickup = form.pickup;
-    const dropoff = form.dropoff;
+    const selectedPackage = tourPackages.find((item) => item.id === form.tourPackageId);
+    const dropoff = form.service === "tour"
+      ? (selectedPackage?.pickup_city || form.dropoff)
+      : form.dropoff;
     setCalculatingRoute(true);
     setRouteError("");
     try {
@@ -253,25 +257,51 @@ function BookingRequest() {
   const matchingTariffs = tariffs.filter((tariff) => tariff.service_type === TARIFF_SERVICE[form.service]);
   const selectedTariff = matchingTariffs.find((tariff) => tariff.vehicle_id === form.vehicle)
     || matchingTariffs.find((tariff) => !tariff.vehicle_id);
+  const transferTariff = tariffs.find((tariff) =>
+    tariff.service_type === "transfer"
+    && (tariff.vehicle_id === form.vehicle || !tariff.vehicle_id)
+  ) || tariffs.find((tariff) => tariff.service_type === "transfer");
   const extrasTotal = EXTRAS
     .filter((extra) => form.extras.includes(extra.id))
     .reduce((sum, extra) => sum + (Number(extra.price) || 0), 0);
-  const fareBeforeExtras = selectedPackage
-    ? Number(selectedPackage.price)
-    : selectedTariff && !(form.service === "hourly" && Number(selectedTariff.per_hour) > 0)
-      ? Number(selectedTariff.per_km) > 0 && !route
-        ? null
-        : Math.max(
-          Number(selectedTariff.min_fare) || 0,
-          (Number(selectedTariff.base_fee) || 0) + (Number(selectedTariff.per_km) || 0) * (route?.distanceKm || 0),
-        )
-      : null;
+  const transferFare = selectedTariff
+    ? route
+      ? Math.max(
+        Number(selectedTariff.min_fare) || 0,
+        (Number(selectedTariff.base_fee) || 0) + (Number(selectedTariff.per_km) || 0) * route.distanceKm,
+      )
+      : null
+    : null;
+  const hourlyFare = selectedTariff
+    ? Math.max(
+      Number(selectedTariff.min_fare) || 0,
+      (Number(selectedTariff.base_fee) || 0) + (Number(selectedTariff.per_hour) || 0) * (Number(form.hours) || 0),
+    )
+    : null;
+  const tourTransferFare = transferTariff && route
+    ? Math.max(
+      Number(transferTariff.min_fare) || 0,
+      (Number(transferTariff.base_fee) || 0) + (Number(transferTariff.per_km) || 0) * route.distanceKm,
+    )
+    : 0;
+  const fareBeforeExtras = form.service === "transfer"
+    ? transferFare
+    : form.service === "hourly"
+      ? hourlyFare
+      : selectedPackage
+        ? Number(selectedPackage.price) + tourTransferFare
+        : null;
   const estimatedSubtotal = fareBeforeExtras === null ? null : fareBeforeExtras + extrasTotal;
   const vatRate = Number(selectedTariff?.vat_pct ?? 10) || 0;
   const estimatedTotal = estimatedSubtotal === null ? null : estimatedSubtotal * (1 + vatRate / 100);
 
   const submitBooking = async (event) => {
     event.preventDefault();
+    if (step !== 4) {
+      if (canContinue) setStep((current) => Math.min(current + 1, 4));
+      return;
+    }
+    if (!canContinue || saving) return;
     setSaving(true);
     setSubmitError("");
     try {
@@ -279,6 +309,11 @@ function BookingRequest() {
       const selectedExtras = EXTRAS.filter((extra) => form.extras.includes(extra.id));
       const booking = await createBooking({
         ...form,
+        dropoff: form.service === "hourly"
+          ? "Hourly service - chauffeur at customer's disposal"
+          : form.service === "tour"
+            ? selectedPackage?.pickup_city || form.dropoff || "Tour itinerary"
+            : form.dropoff,
         vehicleId: selectedVehicle?.id,
         vehicleName: selectedVehicle?.name,
         tourPackageName: selectedPackage?.name,
@@ -303,10 +338,12 @@ function BookingRequest() {
   };
 
   const canContinue = step === 1
-    ? Boolean(form.pickup && form.dropoff && form.date && form.time
+    ? Boolean(form.pickup && form.date && form.time
       && !loadingCatalog
       && pickupHas24HoursNotice
       && availabilityAllowsBooking
+      && (form.service === "transfer" ? form.dropoff : true)
+      && (form.service === "hourly" ? Number(form.hours) > 0 : true)
       && (form.service !== "tour" || form.tourPackageId || !tourPackages.length))
     : step === 4
       ? Boolean(form.name && form.email && pickupHas24HoursNotice && availabilityAllowsBooking)
@@ -369,7 +406,17 @@ function BookingRequest() {
                 <div className="vehicle-choice vehicle-choice--packages">
                   {tourPackages.map((item) => (
                     <button type="button" key={item.id} className={form.tourPackageId === item.id ? "is-selected" : ""} onClick={() => update("tourPackageId", item.id)}>
-                      <div><p>{item.duration_hours} hours</p><h3>{item.name}</h3><small>{item.description}{item.itinerary ? ` · ${item.itinerary}` : ""}</small></div>
+                      {item.image_url && <img src={item.image_url} alt={item.name} />}
+                      <div className="tour-package-card__details">
+                        <p>{item.pickup_city ? `From ${item.pickup_city}` : "Private tour"} · {item.duration_hours} hours</p>
+                        <h3>{item.name}</h3>
+                        {item.description && <small>{item.description}</small>}
+                        {item.itinerary && (
+                          <ul>
+                            {item.itinerary.split("\n").map((line, index) => line.trim() && <li key={index}>{line.trim().replace(/^[-•]\s*/, "")}</li>)}
+                          </ul>
+                        )}
+                      </div>
                       <strong>{currency(Number(item.price))}</strong>
                       <span className="vehicle-choice__check" aria-hidden="true">✓</span>
                     </button>
@@ -378,7 +425,12 @@ function BookingRequest() {
               )}
               <div className="wizard-grid">
                 <label className="wizard-field wizard-field--wide"><span>Pick-up location</span><div className="location-field"><input value={form.pickup} onChange={(event) => update("pickup", event.target.value)} placeholder="Hotel, airport or address" required /><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.pickup || "Italy")}`} target="_blank" rel="noreferrer">Pick from map</a></div></label>
-                <label className="wizard-field"><span>Destination</span><input value={form.dropoff} onChange={(event) => update("dropoff", event.target.value)} placeholder="Where to?" required /></label>
+                {form.service === "transfer" && (
+                  <label className="wizard-field"><span>Destination</span><input value={form.dropoff} onChange={(event) => update("dropoff", event.target.value)} placeholder="Where to?" required /></label>
+                )}
+                {form.service === "hourly" && (
+                  <label className="wizard-field"><span>Hours needed</span><select value={form.hours} onChange={(event) => update("hours", Number(event.target.value))}>{Array.from({ length: 12 }, (_, index) => index + 1).map((hours) => <option key={hours} value={hours}>{hours} {hours === 1 ? "hour" : "hours"}</option>)}</select></label>
+                )}
                 <div className="wizard-field"><span>Pick-up date</span><AvailabilityDatePicker
                   value={form.date}
                   onChange={(value) => update("date", value)}
@@ -408,11 +460,20 @@ function BookingRequest() {
                 <label className="wizard-field wizard-field--wide"><span>Special request or question for our team <small>Optional</small></span><textarea value={form.specialRequest} onChange={(event) => update("specialRequest", event.target.value)} rows="3" placeholder="Tell us what you need; our team can prepare a tailored fare." /></label>
               </div>
               <div className="route-estimate">
-                <button className="btn btn--ghost" type="button" disabled={!form.pickup || !form.dropoff || calculatingRoute} onClick={calculateRoute}>
+                <button
+                  className="btn btn--ghost"
+                  type="button"
+                  disabled={
+                    !form.pickup
+                    || (form.service === "transfer" && !form.dropoff)
+                    || (form.service === "tour" && !selectedPackage?.pickup_city)
+                    || calculatingRoute
+                  }
+                  onClick={calculateRoute}
+                >
                   {calculatingRoute ? "Calculating route..." : "Calculate route & estimate"}
                 </button>
-                <p>Pickup and destination are sent to OpenStreetMap and OSRM to calculate the route.</p>
-                {route && <p>{route.distanceKm} km driving distance · {route.attribution}</p>}
+                {route && <p>{route.distanceKm} km driving distance</p>}
                 {routeError && <p role="alert">{routeError}</p>}
               </div>
             </div>
@@ -477,6 +538,7 @@ function BookingRequest() {
             <div><dt>Service</dt><dd>{SERVICES.find((item) => item.id === form.service)?.name}</dd></div>
             <div><dt>Date & time</dt><dd>{form.date || "Choose date"}{form.time ? ` · ${form.time}` : ""}</dd></div>
             <div><dt>Guests</dt><dd>{form.passengers} passengers · {form.luggage} luggage</dd></div>
+            {form.service === "hourly" && <div><dt>Hours</dt><dd>{form.hours} hours</dd></div>}
             <div><dt>Vehicle</dt><dd>{selectedVehicle?.name}</dd></div>
             {route && <div><dt>Route distance</dt><dd>{route.distanceKm} km</dd></div>}
             {selectedPackage && <div><dt>Package</dt><dd>{selectedPackage.name}</dd></div>}
@@ -484,7 +546,6 @@ function BookingRequest() {
           </dl>
           <div className="booking-summary__total"><span>Estimated total{estimatedSubtotal !== null ? ` (incl. ${vatRate}% VAT)` : ""}</span><strong>{estimatedTotal === null ? (selectedTariff && Number(selectedTariff.per_km) > 0 && !route ? "Calculate route" : "Request a quote") : currency(estimatedTotal)}</strong></div>
           {estimatedSubtotal !== null && <small className="booking-summary__note">Estimate only; the final fare is confirmed by our team.</small>}
-          <small className="booking-summary__note">Route calculation uses OpenStreetMap and OSRM.</small>
         </aside>
 
         <footer className="booking-wizard__footer">

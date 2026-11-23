@@ -1,15 +1,39 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLang } from "./LanguageProvider";
 import { LANGS, dict } from "@/lib/i18n";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function Nav() {
   const { lang, setLang, t, suggested, dismissSuggestion } = useLang();
   const [open, setOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const current = LANGS.find((l) => l.code === lang);
   const closeMobileMenu = () => setMobileOpen(false);
+
+  useEffect(() => {
+    let active = true;
+    try {
+      const supabase = createSupabaseBrowserClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (active) setSignedIn(Boolean(data.user));
+      });
+    } catch {
+      if (active) setSignedIn(false);
+    }
+    return () => { active = false; };
+  }, []);
+
+  const signOut = async () => {
+    try {
+      await createSupabaseBrowserClient().auth.signOut();
+    } finally {
+      window.location.assign("/account/login");
+    }
+  };
 
   return (
     <>
@@ -28,7 +52,28 @@ export default function Nav() {
           <a href="/#fleet" onClick={closeMobileMenu}>{t.nav.fleet}</a>
           <a href="/#interior" onClick={closeMobileMenu}>{t.nav.interior}</a>
           <a href="/#services" onClick={closeMobileMenu}>{t.nav.services}</a>
-          <a href="/account" onClick={closeMobileMenu}>{t.nav.account}</a>
+          <div className="nav__account">
+            <button
+              type="button"
+              className="nav__account-trigger"
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              onClick={() => setAccountOpen((current) => !current)}
+            >
+              {t.nav.account}
+            </button>
+            <div className="nav__account-menu" role="menu">
+              {signedIn ? (
+                <>
+                  <a role="menuitem" href="/account" onClick={closeMobileMenu}>Your bookings</a>
+                  <a role="menuitem" href="/account/profile" onClick={closeMobileMenu}>Profile</a>
+                  <button role="menuitem" type="button" onClick={signOut}>Sign out</button>
+                </>
+              ) : (
+                <a role="menuitem" href="/account/login" onClick={closeMobileMenu}>Sign in</a>
+              )}
+            </div>
+          </div>
         </nav>
         <div className="nav__actions">
           <div className="lang">

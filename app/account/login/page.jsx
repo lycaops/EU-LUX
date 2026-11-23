@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const isConfigured = Boolean(
@@ -14,7 +13,6 @@ const ERROR_MESSAGES = {
 };
 
 export default function AccountLoginPage() {
-  const router = useRouter();
   const [mode, setMode] = useState("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -79,8 +77,7 @@ export default function AccountLoginPage() {
       }
 
       if (profile?.role === "admin") {
-        router.replace("/admin?signedIn=1");
-        router.refresh();
+        window.location.assign("/admin/bookings?signedIn=1");
         return;
       }
 
@@ -93,8 +90,7 @@ export default function AccountLoginPage() {
       }
 
       const next = getNextPath();
-      router.replace(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
-      router.refresh();
+      window.location.assign(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
     } catch {
       setError("Unable to contact the sign-in service. Please try again.");
     } finally {
@@ -133,8 +129,7 @@ export default function AccountLoginPage() {
 
       if (data.session) {
         const next = getNextPath();
-        router.replace(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
-        router.refresh();
+        window.location.assign(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
         return;
       }
 

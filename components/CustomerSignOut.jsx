@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function CustomerSignOut() {
-  const router = useRouter();
   const [error, setError] = useState("");
 
   const signOut = async () => {
@@ -17,8 +15,7 @@ export default function CustomerSignOut() {
         return;
       }
 
-      router.replace("/account/login");
-      router.refresh();
+      window.location.assign("/account/login");
     } catch {
       setError("Sign-out failed. Please try again.");
     }

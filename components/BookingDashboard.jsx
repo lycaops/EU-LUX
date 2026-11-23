@@ -51,7 +51,7 @@ export default function BookingDashboard({ admin = false }) {
     const params = new URLSearchParams(window.location.search);
     const created = params.get("created");
     if (params.get("signedIn") === "1") {
-      getSignInGreeting("customer")
+      getSignInGreeting(admin ? "admin" : "customer")
         .then((greeting) => { if (active) setNotice(greeting); })
         .catch(() => { if (active) setNotice("Welcome! You are signed in as a customer."); });
     }
@@ -87,7 +87,8 @@ export default function BookingDashboard({ admin = false }) {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget).entries());
     const rawLines = data.breakdown.split("\n").map((line) => line.trim()).filter(Boolean);
-    const lines = rawLines.map((line) => {
+    const fareLines = rawLines.filter((line) => !/^VAT\s*\(/i.test(line.slice(0, line.indexOf("|")).trim()));
+    const lines = fareLines.map((line) => {
       const separator = line.lastIndexOf("|");
       if (separator < 1) return null;
       const label = line.slice(0, separator).trim();
@@ -95,7 +96,7 @@ export default function BookingDashboard({ admin = false }) {
       return label && Number.isFinite(amount) && amount >= 0 ? { label, amount } : null;
     }).filter(Boolean);
     const vatRate = Number(data.vatRate);
-    if (!lines.length || lines.length !== rawLines.length || !Number.isFinite(vatRate) || vatRate < 0) {
+    if (!lines.length || lines.length !== fareLines.length || !Number.isFinite(vatRate) || vatRate < 0) {
       setError("Enter quote lines as “Description | amount” and a valid VAT percentage.");
       return;
     }
@@ -169,7 +170,13 @@ export default function BookingDashboard({ admin = false }) {
           <p className="workspace__intro">{admin ? "Review requests, coordinate service, and keep every journey in hand." : "Every detail of your chauffeur journeys, in one considered place."}</p>
         </div>
         <div className="workspace__header-actions">
-          {admin && <AdminSignOut />}
+          {admin && (
+            <>
+              <a className="btn btn--ghost" href="/admin">Admin panel</a>
+              <a className="btn btn--ghost" href="/admin/booking-configuration">Booking configuration</a>
+              <AdminSignOut />
+            </>
+          )}
           {!admin && <CustomerSignOut />}
           <a className="btn btn--solid workspace__new" href={admin ? "/" : "/book"}>{admin ? "View website" : "Request a journey"} <span aria-hidden="true">↗</span></a>
         </div>
@@ -206,7 +213,7 @@ export default function BookingDashboard({ admin = false }) {
               <span>{booking.name}</span><span>{booking.email}</span><span>{booking.passengers} {Number(booking.passengers) === 1 ? "passenger" : "passengers"}</span><span>{booking.phone || "Phone not provided"}</span>
             </div>
             {booking.tourPackageName && <p className="booking-card__request"><strong>Package:</strong> {booking.tourPackageName}</p>}
-            {booking.distanceKm != null && <p className="booking-card__request"><strong>Estimated route:</strong> {booking.distanceKm} km · <span>© OpenStreetMap contributors · Routing by OSRM</span></p>}
+            {booking.distanceKm != null && <p className="booking-card__request"><strong>Estimated route:</strong> {booking.distanceKm} km</p>}
             {booking.specialRequest && <p className="booking-card__request"><strong>Customer request:</strong> {booking.specialRequest}</p>}
             {booking.quoteStatus !== "none" && (
               <div className="booking-quote">
@@ -233,7 +240,7 @@ export default function BookingDashboard({ admin = false }) {
               </form>
             ) : admin && quoteEditing === booking.id ? (
               <form className="booking-edit booking-quote-form" onSubmit={(event) => saveQuote(event, booking)}>
-                <label className="booking-edit__wide">Fare lines <small>One per line: Description | amount (EUR)</small><textarea name="breakdown" rows="4" defaultValue={booking.quoteBreakdown.filter((line) => !line.label.startsWith("VAT (")).map((line) => `${line.label} | ${line.amount}`).join("\n") || (booking.distanceKm ? `Route (${booking.distanceKm} km) | ` : "")} required /></label>
+                <label className="booking-edit__wide">Fare lines <small>One per line: Description | amount (EUR)</small><textarea name="breakdown" rows="6" defaultValue={booking.quoteBreakdown.map((line) => `${line.label} | ${line.amount}`).join("\n") || (booking.distanceKm ? `Route (${booking.distanceKm} km) | ` : "")} required /></label>
                 <label>VAT (%)<input name="vatRate" type="number" min="0" step="0.01" defaultValue={getQuoteVatRate(booking)} required /></label>
                 <label className="booking-edit__wide">Message to customer<textarea name="quoteMessage" rows="2" defaultValue={booking.quoteMessage} placeholder="Optional details about this fare" /></label>
                 <div className="booking-edit__actions"><button className="btn btn--solid" type="submit">Send fare breakdown</button><button className="btn btn--ghost" type="button" onClick={() => setQuoteEditing(null)}>Discard</button></div>
@@ -253,7 +260,7 @@ export default function BookingDashboard({ admin = false }) {
           <div className="workspace__empty"><span aria-hidden="true">✳</span><h2>{bookings.length ? "No journeys match" : "Your next journey starts here"}</h2><p>{bookings.length ? "Try a different search or status." : admin ? "New customer requests will appear here." : "Your confirmed and upcoming journeys will appear here."}</p>{!bookings.length && !admin && <a className="btn btn--solid" href="/book">Plan a journey</a>}</div>
         )}
       </div>
-      <p className="workspace__footnote">{admin ? "Operations workspace · Bookings are synced with the secure Supabase database." : "Your booking requests are securely stored in your account. Need to change a completed journey? Contact our concierge team."}</p>
+      <p className="workspace__footnote">{admin ? "Operations workspace · Booking records are kept up to date in real time." : "Your booking requests are securely stored in your account. Need to change a completed journey? Contact our concierge team."}</p>
     </section>
   );
 }

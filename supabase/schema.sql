@@ -73,11 +73,15 @@ create table if not exists public.tour_packages (
   name text not null,
   description text not null default '',
   itinerary text not null default '',
+  pickup_city text not null default '',
+  image_url text not null default '',
   duration_hours numeric(6,2) not null default 1 check (duration_hours > 0),
   price numeric(10,2) not null default 0 check (price >= 0),
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
+alter table public.tour_packages add column if not exists pickup_city text not null default '';
+alter table public.tour_packages add column if not exists image_url text not null default '';
 
 -- Fixed routes (airport transfers etc.) ----------------------------------
 create table if not exists public.fixed_routes (

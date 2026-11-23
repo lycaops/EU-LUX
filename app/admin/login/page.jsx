@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      window.location.assign("/admin?signedIn=1");
+      window.location.assign("/admin/bookings?signedIn=1");
     } catch {
       setError("Unable to contact the sign-in service. Please try again.");
     } finally {

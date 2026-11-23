@@ -112,7 +112,6 @@ export async function POST(request) {
 
     return NextResponse.json({
       distanceKm: Math.round((result.routes[0].distance / 1000) * 10) / 10,
-      attribution: "© OpenStreetMap contributors · Routing by OSRM",
     });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to calculate this route." }, { status: 502 });
