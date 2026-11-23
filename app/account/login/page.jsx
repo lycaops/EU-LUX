@@ -29,6 +29,9 @@ export default function AccountLoginPage() {
   };
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+      setMode("signup");
+    }
     const reason = new URLSearchParams(window.location.search).get("error");
     if (reason && ERROR_MESSAGES[reason]) setError(ERROR_MESSAGES[reason]);
   }, []);
@@ -129,7 +132,8 @@ export default function AccountLoginPage() {
       }
 
       if (data.session) {
-        router.replace(getNextPath());
+        const next = getNextPath();
+        router.replace(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
         router.refresh();
         return;
       }
@@ -144,64 +148,74 @@ export default function AccountLoginPage() {
   };
 
   return (
-    <section className="admin-login">
-      <div className="admin-login__panel">
-        <p className="workspace__eyebrow">EU LUXURY · YOUR JOURNEYS</p>
-        <h1>{mode === "signup" ? "Create your account" : "Customer sign-in"}</h1>
-        <p>{mode === "signup" ? "Create an account to manage your journeys." : "Sign in to view your account."}</p>
-        <form onSubmit={mode === "signup" ? signUp : signIn}>
-          {mode === "signup" && (
+    <section className="auth-page auth-page--customer">
+      <aside className="auth-page__story">
+        <a className="auth-page__brand" href="/" aria-label="EU Luxury Tours and Travels home">
+          <img src="/logo-transparent.png" alt="" />
+          <span><strong>EU Luxury</strong><small>Tours &amp; Travels</small></span>
+        </a>
+        <div className="auth-page__story-copy">
+          <p>Travel, thoughtfully arranged</p>
+          <h2>Your next journey starts with a warmer welcome.</h2>
+          <span>Keep your trip details close, and every new arrival effortless.</span>
+        </div>
+        <span className="auth-page__location">Private journeys · Italy &amp; Europe</span>
+      </aside>
+
+      <div className="auth-page__content">
+        <div className="auth-card">
+          <p className="auth-card__eyebrow">YOUR JOURNEYS</p>
+          <h1>{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
+          <p className="auth-card__intro">{mode === "signup" ? "Create a customer account to request and manage your journeys." : "Sign in to see your upcoming journeys and booking details."}</p>
+
+          <div className="auth-card__tabs" role="group" aria-label="Account access">
+            <button type="button" aria-pressed={mode === "signin"} className={mode === "signin" ? "is-active" : ""} onClick={() => { setMode("signin"); setError(""); setSuccess(""); }}>Sign in</button>
+            <button type="button" aria-pressed={mode === "signup"} className={mode === "signup" ? "is-active" : ""} onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}>Create account</button>
+          </div>
+
+          <form onSubmit={mode === "signup" ? signUp : signIn}>
+            {mode === "signup" && (
+              <label>
+                Full name
+                <input
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                />
+              </label>
+            )}
             <label>
-              Full name
+              Email address
               <input
-                type="text"
-                autoComplete="name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 required
               />
             </label>
-          )}
-          <label>
-            Email address
-            <input
-              type="email"
-              autoComplete="username"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              minLength={mode === "signup" ? 6 : undefined}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </label>
-          <button className="btn btn--solid" type="submit" disabled={loading || !isConfigured}>
-            {loading ? (mode === "signup" ? "Creating account..." : "Signing in...") : mode === "signup" ? "Create account" : "Sign in"}
-          </button>
-        </form>
-        {!isConfigured && <p className="admin-login__error" role="alert">{ERROR_MESSAGES.configuration}</p>}
-        {error && <p className="admin-login__error" role="alert">{error}</p>}
-        {success && <p className="admin-login__success" role="status">{success}</p>}
-        <button
-          className="admin-login__switch"
-          type="button"
-          onClick={() => {
-            setMode((current) => current === "signin" ? "signup" : "signin");
-            setError("");
-            setSuccess("");
-          }}
-        >
-          {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-        </button>
-        <a href="/">Return to the website</a>
+            <label>
+              Password
+              <input
+                type="password"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                minLength={mode === "signup" ? 6 : undefined}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+            <button className="btn btn--solid auth-card__submit" type="submit" disabled={loading || !isConfigured}>
+              {loading ? (mode === "signup" ? "Creating account..." : "Signing in...") : mode === "signup" ? "Create customer account" : "Sign in"}
+            </button>
+          </form>
+          {!isConfigured && <p className="admin-login__error" role="alert">{ERROR_MESSAGES.configuration}</p>}
+          {error && <p className="admin-login__error" role="alert">{error}</p>}
+          {success && <p className="admin-login__success" role="status">{success}</p>}
+          <a className="auth-card__back" href="/">← Return to the website</a>
+        </div>
       </div>
     </section>
   );

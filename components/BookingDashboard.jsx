@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getBookings, removeBooking, updateBooking } from "@/lib/bookings";
-import { getBookingConfig, saveBookingConfig } from "@/lib/bookingConfig";
+import { getSignInGreeting } from "@/lib/supabase/greeting";
 import AdminSignOut from "@/components/AdminSignOut";
 import CustomerSignOut from "@/components/CustomerSignOut";
 
@@ -24,7 +24,6 @@ export default function BookingDashboard({ admin = false }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [bookingConfig, setBookingConfig] = useState(() => getBookingConfig());
 
   useEffect(() => {
     let active = true;
@@ -45,43 +44,13 @@ export default function BookingDashboard({ admin = false }) {
     const params = new URLSearchParams(window.location.search);
     const created = params.get("created");
     if (params.get("signedIn") === "1") {
-      setNotice(admin
-        ? "Signed in successfully. You are in the administrator dashboard."
-        : "Signed in successfully.");
+      getSignInGreeting("customer")
+        .then((greeting) => { if (active) setNotice(greeting); })
+        .catch(() => { if (active) setNotice("Welcome! You are signed in as a customer."); });
     }
     if (created) setNotice(`Request ${created} received.`);
     return () => { active = false; };
   }, [admin]);
-
-  const updateConfigItem = (group, id, field, value) => {
-    setBookingConfig((current) => ({
-      ...current,
-      [group]: current[group].map((item) => item.id === id ? { ...item, [field]: value } : item),
-    }));
-  };
-
-  const saveConfig = () => {
-    saveBookingConfig(bookingConfig);
-    setNotice("Booking options updated. The new choices are available at /book.");
-  };
-
-  const removeConfigItem = (group, id) => {
-    setBookingConfig((current) => ({ ...current, [group]: current[group].filter((item) => item.id !== id) }));
-  };
-
-  const addConfigItem = (group) => {
-    const suffix = Date.now().toString(36);
-    setBookingConfig((current) => ({
-      ...current,
-      [group]: [...current[group], group === "vehicles"
-        ? { id: `vehicle-${suffix}`, name: "New vehicle", passengers: 7, luggage: 7, image: "/scenes/ext_r.webp", note: "Available fleet", enabled: true }
-        : group === "extras"
-          ? { id: `extra-${suffix}`, name: "New extra", price: "10", enabled: true }
-          : group === "payments"
-            ? { id: `payment-${suffix}`, name: "New payment", note: "Payment instructions", enabled: true }
-            : { id: `service-${suffix}`, name: "New service", note: "Service description", enabled: true }],
-    }));
-  };
 
   const visibleBookings = useMemo(() => bookings.filter((booking) => {
     const matchesStatus = filter === EMPTY_FILTER || booking.status === filter;
@@ -160,32 +129,6 @@ export default function BookingDashboard({ admin = false }) {
         <label className="workspace__search"><span className="sr-only">Search bookings</span><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, route or reference" /></label>
         <label className="workspace__filter"><span className="sr-only">Filter by status</span><select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All statuses</option>{STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}</option>)}</select></label>
       </div>
-
-      {admin && (
-        <details className="admin-config">
-          <summary><span>Booking configuration</span><small>Services · Fleet · Extras · Payments</small></summary>
-          <div className="admin-config__grid">
-            {["services", "vehicles", "extras", "payments"].map((group) => (
-              <section className="admin-config__group" key={group}>
-                <header><h2>{group[0].toUpperCase() + group.slice(1)}</h2><button type="button" onClick={() => addConfigItem(group)}>+ Add</button></header>
-                <div className="admin-config__items">
-                  {bookingConfig[group].map((item) => (
-                    <article key={item.id}>
-                      <label>Name<input value={item.name} onChange={(event) => updateConfigItem(group, item.id, "name", event.target.value)} /></label>
-                      {(group === "services" || group === "payments") && <label>{group === "payments" ? "Description" : "Note"}<input value={item.note || ""} onChange={(event) => updateConfigItem(group, item.id, "note", event.target.value)} /></label>}
-                      {group === "extras" && <label>Price (€)<input type="number" min="0" value={item.price} onChange={(event) => updateConfigItem(group, item.id, "price", event.target.value)} /></label>}
-                      {group === "vehicles" && <><label>Passengers<input type="number" min="1" value={item.passengers} onChange={(event) => updateConfigItem(group, item.id, "passengers", Number(event.target.value))} /></label><label>Luggage<input type="number" min="0" value={item.luggage} onChange={(event) => updateConfigItem(group, item.id, "luggage", Number(event.target.value))} /></label></>}
-                      <label className="admin-config__enabled"><input type="checkbox" checked={item.enabled} onChange={(event) => updateConfigItem(group, item.id, "enabled", event.target.checked)} />Enabled</label>
-                      <button className="admin-config__remove" type="button" onClick={() => removeConfigItem(group, item.id)}>Remove</button>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-          <button type="button" className="btn btn--solid admin-config__save" onClick={saveConfig}>Save booking configuration</button>
-        </details>
-      )}
 
       {notice && <p className="workspace__notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Dismiss message">×</button></p>}
       {error && <p className="admin-login__error" role="alert">{error}</p>}

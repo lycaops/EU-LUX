@@ -79,39 +79,55 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <section className="admin-login">
-      <div className="admin-login__panel">
-        <p className="workspace__eyebrow">EU LUXURY · OPERATIONS</p>
-        <h1>Administrator sign-in</h1>
-        <p>Use an administrator account to access the operations workspace.</p>
-        <form onSubmit={signIn}>
-          <label>
-            Email address
-            <input
-              type="email"
-              autoComplete="username"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </label>
-          <button className="btn btn--solid" type="submit" disabled={loading || !isConfigured}>
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-        {!isConfigured && <p className="admin-login__error" role="alert">{ERROR_MESSAGES.configuration}</p>}
-        {error && <p className="admin-login__error" role="alert">{error}</p>}
-        <a href="/">Return to the website</a>
+    <section className="auth-page auth-page--admin">
+      <aside className="auth-page__story">
+        <a className="auth-page__brand" href="/" aria-label="EU Luxury Tours and Travels home">
+          <img src="/logo-transparent.png" alt="" />
+          <span><strong>EU Luxury</strong><small>Operations</small></span>
+        </a>
+        <div className="auth-page__story-copy">
+          <p>EU Luxury · Operations</p>
+          <h2>Every detail of the journey, in hand.</h2>
+          <span>Sign in to coordinate bookings and manage your service settings.</span>
+        </div>
+        <span className="auth-page__location">Administrator workspace</span>
+      </aside>
+
+      <div className="auth-page__content">
+        <div className="auth-card">
+          <p className="auth-card__eyebrow">ADMINISTRATOR ACCESS</p>
+          <h1>Welcome back</h1>
+          <p className="auth-card__intro">Sign in with an administrator account to continue to the operations workspace.</p>
+          <form onSubmit={signIn}>
+            <label>
+              Email address
+              <input
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+            <button className="btn btn--solid auth-card__submit" type="submit" disabled={loading || !isConfigured}>
+              {loading ? "Signing in..." : "Sign in to admin"}
+            </button>
+          </form>
+          {!isConfigured && <p className="admin-login__error" role="alert">{ERROR_MESSAGES.configuration}</p>}
+          {error && <p className="admin-login__error" role="alert">{error}</p>}
+          <a className="auth-card__back" href="/">← Return to the website</a>
+          <p className="auth-card__customer-link">Looking for your customer account? <a href="/account/login">Customer sign-in</a></p>
+        </div>
       </div>
     </section>
   );

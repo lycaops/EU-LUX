@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createBooking } from "@/lib/bookings";
 import { getBookingConfig } from "@/lib/bookingConfig";
+import { getSignInGreeting } from "@/lib/supabase/greeting";
 
 function BookingRequest() {
   const params = useSearchParams();
@@ -11,6 +12,7 @@ function BookingRequest() {
   const [saving, setSaving] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [greeting, setGreeting] = useState("");
   const dateInput = useRef(null);
   const timeInput = useRef(null);
   const [config] = useState(() => getBookingConfig());
@@ -35,6 +37,15 @@ function BookingRequest() {
     email: "",
     phone: "",
   });
+
+  useEffect(() => {
+    if (params.get("signedIn") !== "1") return;
+    let active = true;
+    getSignInGreeting("customer")
+      .then((message) => { if (active) setGreeting(message); })
+      .catch(() => { if (active) setGreeting("Welcome! You are signed in as a customer."); });
+    return () => { active = false; };
+  }, [params]);
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
   const toggleExtra = (id) => setForm((current) => ({
@@ -74,7 +85,7 @@ function BookingRequest() {
   if (confirmation) {
     return (
       <section className="booking-wizard">
-        {params.get("signedIn") === "1" && <p className="workspace__notice" role="status">Signed in successfully.</p>}
+        {greeting && <p className="workspace__notice" role="status">{greeting}</p>}
         <header className="booking-wizard__header">
           <div><p>Request saved</p><h1>Your journey request has been saved.</h1></div>
         </header>
@@ -99,6 +110,7 @@ function BookingRequest() {
 
   return (
     <section className="booking-wizard">
+      {greeting && <p className="workspace__notice" role="status">{greeting}</p>}
       <header className="booking-wizard__header">
         <div><p>Book your journey</p><h1>Four steps, one flawless arrival.</h1></div>
         <ol className="booking-progress" aria-label="Booking progress">

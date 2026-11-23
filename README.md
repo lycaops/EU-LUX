@@ -69,7 +69,7 @@ Customers can create an account or sign in at `/account/login`; new users receiv
 
 The middleware and server-rendered `/admin` page both verify the Supabase user and the `profiles.role` value. Missing configuration, missing profiles, and non-admin accounts are denied access. The SQL RLS policies are a second authorization boundary for database access. Security headers are configured in `next.config.mjs`; HSTS is sent in production.
 
-The admin workspace manages customer bookings, live fare tariffs (including a per-kilometre rate), and tour packages. Run the current `supabase/schema.sql` in the Supabase SQL Editor to create or update the tables and policies, then sign in with an account whose profile role is `admin`.
+The protected admin workspace provides separate pages for the **Booking desk** (`/admin/bookings`), **Booking configuration** (`/admin/booking-configuration`), and the **Admin panel** (`/admin`), which manages live fare tariffs (including a per-kilometre rate) and tour packages. Run the current `supabase/schema.sql` in the Supabase SQL Editor to create or update the tables and policies, then sign in with an account whose profile role is `admin`.
 
 ## Important production limitation
 
