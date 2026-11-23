@@ -15,9 +15,12 @@ const ERROR_MESSAGES = {
 
 export default function AccountLoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState("signin");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,6 +31,7 @@ export default function AccountLoginPage() {
   const signIn = async (event) => {
     event.preventDefault();
     setError("");
+    setSuccess("");
 
     if (!isConfigured) {
       setError(ERROR_MESSAGES.configuration);
@@ -89,13 +93,69 @@ export default function AccountLoginPage() {
     }
   };
 
+  const signUp = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!isConfigured) {
+      setError(ERROR_MESSAGES.configuration);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
+      });
+
+      if (authError) {
+        setError(authError.message || "Account creation failed. Please try again.");
+        return;
+      }
+
+      if (!data.user) {
+        setError("Account creation failed. Please try again.");
+        return;
+      }
+
+      if (data.session) {
+        router.replace("/account");
+        router.refresh();
+        return;
+      }
+
+      setSuccess("Account created. Check your email for a confirmation link, then sign in.");
+      setMode("signin");
+    } catch {
+      setError("Unable to contact the sign-up service. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="admin-login">
       <div className="admin-login__panel">
         <p className="workspace__eyebrow">EU LUXURY · YOUR JOURNEYS</p>
-        <h1>Customer sign-in</h1>
-        <p>Sign in to view your account.</p>
-        <form onSubmit={signIn}>
+        <h1>{mode === "signup" ? "Create your account" : "Customer sign-in"}</h1>
+        <p>{mode === "signup" ? "Create an account to manage your journeys." : "Sign in to view your account."}</p>
+        <form onSubmit={mode === "signup" ? signUp : signIn}>
+          {mode === "signup" && (
+            <label>
+              Full name
+              <input
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+              />
+            </label>
+          )}
           <label>
             Email address
             <input
@@ -110,18 +170,31 @@ export default function AccountLoginPage() {
             Password
             <input
               type="password"
-              autoComplete="current-password"
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              minLength={mode === "signup" ? 6 : undefined}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
             />
           </label>
           <button className="btn btn--solid" type="submit" disabled={loading || !isConfigured}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? (mode === "signup" ? "Creating account..." : "Signing in...") : mode === "signup" ? "Create account" : "Sign in"}
           </button>
         </form>
         {!isConfigured && <p className="admin-login__error" role="alert">{ERROR_MESSAGES.configuration}</p>}
         {error && <p className="admin-login__error" role="alert">{error}</p>}
+        {success && <p className="admin-login__success" role="status">{success}</p>}
+        <button
+          className="admin-login__switch"
+          type="button"
+          onClick={() => {
+            setMode((current) => current === "signin" ? "signup" : "signin");
+            setError("");
+            setSuccess("");
+          }}
+        >
+          {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+        </button>
         <a href="/">Return to the website</a>
       </div>
     </section>

@@ -1,15 +1,18 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createBooking } from "@/lib/bookings";
 import { getBookingConfig } from "@/lib/bookingConfig";
 
 function BookingRequest() {
   const params = useSearchParams();
-  const router = useRouter();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const dateInput = useRef(null);
+  const timeInput = useRef(null);
   const [config] = useState(() => getBookingConfig());
   const SERVICES = config.services.filter((item) => item.enabled);
   const VEHICLES = config.vehicles.filter((item) => item.enabled);
@@ -42,15 +45,22 @@ function BookingRequest() {
   const submitBooking = (event) => {
     event.preventDefault();
     setSaving(true);
-    const selectedVehicle = VEHICLES.find((vehicle) => vehicle.id === form.vehicle);
-    const selectedExtras = EXTRAS.filter((extra) => form.extras.includes(extra.id));
-    const booking = createBooking({
-      ...form,
-      vehicleName: selectedVehicle?.name,
-      extrasDetails: selectedExtras,
-      paymentStatus: form.payment === "later" ? "pay-later" : "pending",
-    });
-    router.push(`/account?created=${booking.reference}`);
+    setSubmitError("");
+    try {
+      const selectedVehicle = VEHICLES.find((vehicle) => vehicle.id === form.vehicle);
+      const selectedExtras = EXTRAS.filter((extra) => form.extras.includes(extra.id));
+      const booking = createBooking({
+        ...form,
+        vehicleName: selectedVehicle?.name,
+        extrasDetails: selectedExtras,
+        paymentStatus: form.payment === "later" ? "pay-later" : "pending",
+      });
+      setConfirmation(booking.reference);
+    } catch {
+      setSubmitError("We couldn't save your request in this browser. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const canContinue = step === 1
@@ -60,6 +70,31 @@ function BookingRequest() {
       : true;
 
   const selectedVehicle = VEHICLES.find((vehicle) => vehicle.id === form.vehicle);
+
+  if (confirmation) {
+    return (
+      <section className="booking-wizard">
+        <header className="booking-wizard__header">
+          <div><p>Request saved</p><h1>Your journey request has been saved.</h1></div>
+        </header>
+        <div className="booking-confirmation">
+          <p>Booking reference</p>
+          <h2>{confirmation}</h2>
+          <p>This browser-only demo saves your request on this device. You do not need to sign in or create an account to complete it.</p>
+          <a className="btn btn--solid" href="/">Return to the website</a>
+        </div>
+      </section>
+    );
+  }
+
+  const openPicker = (input) => {
+    if (typeof input?.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+    input?.focus();
+    input?.click();
+  };
 
   return (
     <section className="booking-wizard">
@@ -89,8 +124,8 @@ function BookingRequest() {
               <div className="wizard-grid">
                 <label className="wizard-field wizard-field--wide"><span>Pick-up location</span><div className="location-field"><input value={form.pickup} onChange={(event) => update("pickup", event.target.value)} placeholder="Hotel, airport or address" required /><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.pickup || "Italy")}`} target="_blank" rel="noreferrer">Pick from map</a></div></label>
                 <label className="wizard-field"><span>Destination</span><input value={form.dropoff} onChange={(event) => update("dropoff", event.target.value)} placeholder="Where to?" required /></label>
-                <label className="wizard-field"><span>Date</span><input type="date" value={form.date} onChange={(event) => update("date", event.target.value)} min={new Date().toISOString().slice(0, 10)} required /></label>
-                <label className="wizard-field"><span>Time</span><input type="time" value={form.time} onChange={(event) => update("time", event.target.value)} required /></label>
+                <label className="wizard-field"><span>Date</span><div className="wizard-picker"><input ref={dateInput} type="date" value={form.date} onChange={(event) => update("date", event.target.value)} min={new Date().toISOString().slice(0, 10)} required /><button type="button" aria-label="Open date picker" onClick={() => openPicker(dateInput.current)}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button></div></label>
+                <label className="wizard-field"><span>Time</span><div className="wizard-picker"><input ref={timeInput} type="time" value={form.time} onChange={(event) => update("time", event.target.value)} required /><button type="button" aria-label="Open time picker" onClick={() => openPicker(timeInput.current)}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button></div></label>
                 <label className="wizard-field"><span>Passengers</span><select value={form.passengers} onChange={(event) => update("passengers", Number(event.target.value))}>{Array.from({ length: 7 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1} {index === 0 ? "passenger" : "passengers"}</option>)}</select></label>
                 <label className="wizard-field"><span>Luggage</span><select value={form.luggage} onChange={(event) => update("luggage", Number(event.target.value))}>{Array.from({ length: 9 }, (_, index) => <option key={index} value={index}>{index} {index === 1 ? "piece" : "pieces"}</option>)}</select></label>
                 <label className="wizard-field"><span>Flight number <small>Optional</small></span><input value={form.flight} onChange={(event) => update("flight", event.target.value)} placeholder="e.g. AZ 204" /></label>
@@ -160,6 +195,7 @@ function BookingRequest() {
         </aside>
 
         <footer className="booking-wizard__footer">
+          {submitError && <p className="admin-login__error" role="alert">{submitError}</p>}
           {step > 1 && <button type="button" className="wizard-back" onClick={() => setStep((current) => current - 1)}>Back</button>}
           {step < 4
             ? <button type="button" className="btn btn--solid" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>Continue<span aria-hidden="true"> →</span></button>

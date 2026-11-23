@@ -345,6 +345,9 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 .admin-login__panel button:disabled { opacity: 0.5; cursor: not-allowed; }
 .admin-login__panel > a { display: inline-block; margin-top: 1.2rem; color: var(--champagne); font-size: 0.78rem; }
 .admin-login__error { margin-top: 1rem; color: #e4a197; font-size: 0.78rem; }
+.admin-login__success { margin-top: 1rem; color: var(--champagne); font-size: 0.78rem; }
+.admin-login__switch { margin-top: 1.2rem; border: 0; background: none; color: var(--champagne); font: inherit; font-size: 0.78rem; cursor: pointer; }
+.admin-login__switch:hover { color: var(--gold); }
 .request-page { max-width: none; }
 .request-page__heading, .request-form { max-width: 960px; margin-inline: auto; }
 .request-page__heading { margin-bottom: 2rem; }
@@ -380,6 +383,11 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 .booking-progress li.is-active button span, .booking-progress li.is-complete button span { border-color: var(--gold); background: var(--gold); color: #111; }
 .booking-wizard__body { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 1.2rem; }
 .booking-wizard__content { min-height: 520px; border: 1px solid var(--line); background: rgba(255,255,255,0.025); padding: clamp(1.2rem, 3vw, 2.2rem); }
+.booking-confirmation { max-width: 720px; margin: 0 auto; padding: clamp(1.5rem, 5vw, 3rem); border: 1px solid var(--line); background: rgba(255,255,255,0.025); }
+.booking-confirmation > p:first-child { color: var(--muted); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.booking-confirmation h2 { margin: 0.4rem 0 1.2rem; color: var(--champagne); font-size: clamp(2rem, 5vw, 3rem); }
+.booking-confirmation > p:not(:first-child) { margin-bottom: 1.5rem; color: var(--muted); }
+.booking-confirmation .btn { display: inline-block; }
 .wizard-step__heading { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.6rem; }
 .wizard-step__heading > span { color: var(--gold); font-family: var(--serif); font-size: 1.55rem; }
 .wizard-step__heading p { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.13em; }
@@ -394,6 +402,12 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 .wizard-field--wide { grid-column: 1 / -1; }
 .wizard-field small { margin-inline-start: 0.35rem; color: rgba(255,255,255,0.38); }
 .wizard-field input, .wizard-field select, .wizard-field textarea { width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 2px; background: rgba(0,0,0,0.32); color: var(--white); padding: 0.78rem 0.85rem; font: inherit; font-size: 0.82rem; text-transform: none; letter-spacing: 0; }
+.wizard-field input[type="date"], .wizard-field input[type="time"] { color-scheme: dark; cursor: pointer; }
+.wizard-picker { display: grid; grid-template-columns: minmax(0, 1fr) 44px; }
+.wizard-picker input { min-width: 0; border-radius: 2px 0 0 2px; }
+.wizard-picker button { display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.14); border-inline-start: 0; border-radius: 0 2px 2px 0; background: rgba(0,0,0,0.32); color: var(--champagne); cursor: pointer; }
+.wizard-picker button:hover { color: var(--gold); }
+.wizard-picker svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
 .wizard-field textarea { resize: vertical; }
 .wizard-field input:focus, .wizard-field select:focus, .wizard-field textarea:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
 .location-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; }

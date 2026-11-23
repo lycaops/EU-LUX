@@ -52,7 +52,7 @@ This project uses Next.js 14 and Supabase Auth for administrator access. The ste
    npm run start
    ```
 
-Customer accounts must be created in Supabase Authentication; new users receive the `customer` role through the profile trigger. Customers sign in at `/account/login`. The `/account` route checks the Supabase session and customer role on the server.
+Customers can create an account or sign in at `/account/login`; new users receive the `customer` role through the profile trigger. The `/account` route checks the Supabase session and customer role on the server. Booking requests can be submitted without an account; confirmation is shown on the public booking page.
 
 ### 3. Deploy with Vercel
 
