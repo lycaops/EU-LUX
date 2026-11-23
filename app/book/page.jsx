@@ -75,7 +75,7 @@ function BookingRequest() {
     vehicle: "",
     tourPackageId: "",
     extras: [],
-    payment: "later",
+    payment: "",
     name: "",
     email: "",
     phone: "",
@@ -346,7 +346,7 @@ function BookingRequest() {
       && (form.service === "hourly" ? Number(form.hours) > 0 : true)
       && (form.service !== "tour" || form.tourPackageId || !tourPackages.length))
     : step === 4
-      ? Boolean(form.name && form.email && pickupHas24HoursNotice && availabilityAllowsBooking)
+      ? Boolean(form.name && form.email && form.payment && pickupHas24HoursNotice && availabilityAllowsBooking)
       : true;
 
   if (confirmation) {
@@ -389,7 +389,7 @@ function BookingRequest() {
         </ol>
       </header>
 
-      <form className="booking-wizard__body" onSubmit={submitBooking}>
+      <form className="booking-wizard__body" onSubmit={(event) => event.preventDefault()}>
         <div className="booking-wizard__content">
           {step === 1 && (
             <div className="wizard-step">
@@ -522,6 +522,7 @@ function BookingRequest() {
                   </button>
                 ))}
               </div>
+              {!form.payment && <p className="booking-catalog-loading" role="status">Select a payment method to continue.</p>}
               <div className="wizard-grid wizard-contact">
                 <label className="wizard-field"><span>Full name</span><input value={form.name} onChange={(event) => update("name", event.target.value)} autoComplete="name" required /></label>
                 <label className="wizard-field"><span>Email address</span><input type="email" value={form.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" readOnly={Boolean(userEmail)} required /></label>
@@ -556,7 +557,7 @@ function BookingRequest() {
           {step > 1 && <button type="button" className="wizard-back" onClick={() => setStep((current) => current - 1)}>Back</button>}
           {step < 4
             ? <button type="button" className="btn btn--solid" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>Continue<span aria-hidden="true"> →</span></button>
-            : <button type="submit" className="btn btn--solid" disabled={!canContinue || saving}>{saving ? "Confirming..." : "Confirm booking"}<span aria-hidden="true"> →</span></button>}
+            : <button type="button" className="btn btn--solid" disabled={!canContinue || saving} onClick={submitBooking}>{saving ? "Confirming..." : "Confirm booking"}<span aria-hidden="true"> →</span></button>}
         </footer>
       </form>
     </section>

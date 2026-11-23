@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLayout({ children }) {
+export default async function AdminWorkspaceLayout({ children }) {
   await requireAdmin();
   return (
     <>

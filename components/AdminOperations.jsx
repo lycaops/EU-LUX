@@ -182,8 +182,6 @@ export default function AdminOperations() {
           <p className="workspace__intro">Manage live fare tariffs and private tour packages.</p>
         </div>
         <div className="workspace__header-actions">
-          <a className="btn btn--ghost" href="/admin/bookings">Booking desk</a>
-          <a className="btn btn--ghost" href="/admin/booking-configuration">Booking configuration</a>
           <AdminSignOut />
           <a className="btn btn--solid workspace__new" href="/">View website <span aria-hidden="true">↗</span></a>
         </div>

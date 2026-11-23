@@ -83,6 +83,28 @@ export default function BookingDashboard({ admin = false }) {
     }
   };
 
+  const changePayment = async (booking) => {
+    const next = booking.paymentStatus === "paid" ? "unpaid" : "paid";
+    setError("");
+    try {
+      const updated = await updateBooking(booking.id, { paymentStatus: next });
+      setBookings((current) => current.map((item) => item.id === booking.id ? updated : item));
+      setNotice(`${booking.reference} payment marked ${next}.`);
+    } catch {
+      setError(`Unable to update payment for ${booking.reference}. Please try again.`);
+    }
+  };
+
+  const copyReference = async (booking) => {
+    setError("");
+    try {
+      await navigator.clipboard.writeText(booking.reference);
+      setNotice(`${booking.reference} copied to the clipboard.`);
+    } catch {
+      setError("Unable to copy the reference. Please copy it manually.");
+    }
+  };
+
   const saveQuote = async (event, booking) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget).entries());
@@ -170,13 +192,7 @@ export default function BookingDashboard({ admin = false }) {
           <p className="workspace__intro">{admin ? "Review requests, coordinate service, and keep every journey in hand." : "Every detail of your chauffeur journeys, in one considered place."}</p>
         </div>
         <div className="workspace__header-actions">
-          {admin && (
-            <>
-              <a className="btn btn--ghost" href="/admin">Admin panel</a>
-              <a className="btn btn--ghost" href="/admin/booking-configuration">Booking configuration</a>
-              <AdminSignOut />
-            </>
-          )}
+          {admin && <AdminSignOut />}
           {!admin && <CustomerSignOut />}
           <a className="btn btn--solid workspace__new" href={admin ? "/" : "/book"}>{admin ? "View website" : "Request a journey"} <span aria-hidden="true">↗</span></a>
         </div>
@@ -201,7 +217,13 @@ export default function BookingDashboard({ admin = false }) {
         {loading ? <div className="workspace__empty"><p>Loading bookings...</p></div> : visibleBookings.length ? visibleBookings.map((booking) => (
           <article className="booking-card" key={booking.id}>
             <div className="booking-card__top">
-              <div><span className="booking-card__reference">{booking.reference}</span><span className={`booking-status booking-status--${booking.status}`}>{booking.status}</span></div>
+              <div>
+                <span className="booking-card__reference">{booking.reference}</span>
+                <span className={`booking-status booking-status--${booking.status}`}>{booking.status}</span>
+                <span className={`booking-payment booking-payment--${booking.paymentStatus}`}>
+                  {booking.paymentStatus === "paid" ? "Paid" : booking.paymentStatus === "refunded" ? "Refunded" : "Unpaid"}
+                </span>
+              </div>
               <span className="booking-card__date">{formatPickup(booking)}</span>
             </div>
             <div className="booking-card__route">
@@ -210,7 +232,7 @@ export default function BookingDashboard({ admin = false }) {
               <div><span className="route-dot route-dot--end"/><div><small>Destination</small><strong>{booking.dropoff}</strong></div></div>
             </div>
             <div className="booking-card__details">
-              <span>{booking.name}</span><span>{booking.email}</span><span>{booking.passengers} {Number(booking.passengers) === 1 ? "passenger" : "passengers"}</span><span>{booking.phone || "Phone not provided"}</span>
+              <span>{booking.name}</span><span>{booking.email}</span><span>{booking.phone || "Phone not provided"}</span><span>{booking.passengers} {Number(booking.passengers) === 1 ? "passenger" : "passengers"}</span><span>{booking.luggage} {Number(booking.luggage) === 1 ? "bag" : "bags"}</span><span>Service: {(booking.service || "transfer").replace("_", " ")}</span><span>Payment: {booking.payment}</span>
             </div>
             {booking.tourPackageName && <p className="booking-card__request"><strong>Package:</strong> {booking.tourPackageName}</p>}
             {booking.distanceKm != null && <p className="booking-card__request"><strong>Estimated route:</strong> {booking.distanceKm} km</p>}
@@ -247,12 +269,24 @@ export default function BookingDashboard({ admin = false }) {
               </form>
             ) : (
               <div className="booking-card__actions">
-                {admin && booking.status === "pending" && <button className="action-link action-link--accept" type="button" onClick={() => changeStatus(booking, "confirmed")}>Accept request</button>}
-                {admin && <label className="booking-card__status">Update status<select value={booking.status} onChange={(event) => changeStatus(booking, event.target.value)}>{STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}</option>)}</select></label>}
-                {admin && booking.status !== "completed" && booking.status !== "cancelled" && <button className="action-link" type="button" onClick={() => setEditing(booking.id)}>Edit details</button>}
-                {admin && booking.status !== "cancelled" && <button className="action-link" type="button" onClick={() => setQuoteEditing(booking.id)}>{booking.quoteStatus === "none" ? "Prepare fare" : "Update fare"}</button>}
-                {!admin && !["completed", "cancelled"].includes(booking.status) && <button className="action-link action-link--cancel" type="button" onClick={() => changeStatus(booking, "cancelled")}>Cancel journey</button>}
-                {admin && <button className="action-link action-link--remove" type="button" onClick={() => deleteBooking(booking)}>Remove</button>}
+                {admin ? (
+                  <>
+                    {booking.status === "pending" && <button className="booking-action booking-action--accept" type="button" onClick={() => changeStatus(booking, "confirmed")}>Confirm booking</button>}
+                    {["pending", "confirmed"].includes(booking.status) && <button className="booking-action booking-action--accept" type="button" onClick={() => changeStatus(booking, "assigned")}>Assign chauffeur</button>}
+                    {["pending", "confirmed", "assigned"].includes(booking.status) && <button className="booking-action" type="button" onClick={() => changeStatus(booking, "completed")}>Mark completed</button>}
+                    {["pending", "confirmed", "assigned"].includes(booking.status) && <button className="booking-action booking-action--danger" type="button" onClick={() => changeStatus(booking, "cancelled")}>Cancel booking</button>}
+                    {["completed", "cancelled"].includes(booking.status) && <button className="booking-action" type="button" onClick={() => changeStatus(booking, "pending")}>Reopen booking</button>}
+                    <button className={`booking-action${booking.paymentStatus === "paid" ? "" : " booking-action--primary"}`} type="button" onClick={() => changePayment(booking)}>{booking.paymentStatus === "paid" ? "Mark as unpaid" : "Mark as paid"}</button>
+                    {booking.status !== "cancelled" && <button className="booking-action" type="button" onClick={() => setQuoteEditing(booking.id)}>{booking.quoteStatus === "none" ? "Prepare fare" : "Update fare"}</button>}
+                    {!["completed", "cancelled"].includes(booking.status) && <button className="booking-action" type="button" onClick={() => setEditing(booking.id)}>Edit details</button>}
+                    {booking.email && <a className="booking-action booking-action--muted" href={`mailto:${booking.email}`}>Email customer</a>}
+                    {booking.phone && <a className="booking-action booking-action--muted" href={`tel:${booking.phone}`}>Call customer</a>}
+                    <button className="booking-action booking-action--muted" type="button" onClick={() => copyReference(booking)}>Copy reference</button>
+                    <button className="booking-action booking-action--danger" type="button" onClick={() => deleteBooking(booking)}>Remove</button>
+                  </>
+                ) : (
+                  !["completed", "cancelled"].includes(booking.status) && <button className="booking-action booking-action--danger" type="button" onClick={() => changeStatus(booking, "cancelled")}>Cancel journey</button>
+                )}
               </div>
             )}
           </article>
