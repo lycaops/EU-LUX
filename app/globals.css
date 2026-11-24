@@ -160,7 +160,9 @@ html[dir="rtl"] .scene-text .eyebrow { letter-spacing: 0; font-size: 0.95rem; }
 .scene-text p { color: rgba(255,255,255,0.92); max-width: 620px; margin: 1.3rem auto 0; font-size: clamp(0.95rem, 1.6vw, 1.15rem); }
 /* Keep the hero copy legible against every background photo. */
 .scene-text h1, .scene-text h2, .scene-text p, .scene-text .eyebrow { text-shadow: 0 2px 22px rgba(0,0,0,0.82), 0 1px 4px rgba(0,0,0,0.7); }
-.scene-text--s1 { top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; padding: 20vh 0 0; inset-inline: 70% 3%; text-align: start; }
+/* First scene copy sits above the vehicle instead of centring into it, so tall screens
+   keep the "Your journey, our privilege" block clear of the van, matching mobile. */
+.scene-text--s1 { top: 13vh; bottom: auto; padding: 0; inset-inline: 70% 3%; text-align: start; }
 .scene-text--s2 { top: 9%; inset-inline: 8%; text-align: center; }
 .scene-text--s1 h1 { font-size: clamp(2rem, 3.2vw, 3.2rem); }
 .scene-text--s2 h2 { font-size: clamp(2.4rem, 4.2vw, 4.2rem); }
@@ -225,12 +227,12 @@ html[dir="rtl"] .booking label { letter-spacing: 0; font-size: 0.85rem; }
   .booking .hint { font-size: 0.72rem; }
 }
 @media (min-width: 801px) and (max-width: 1099px) {
-  .scene-text--s1 { top: 0; bottom: 0; padding-top: 28vh; inset-inline-start: 65%; inset-inline-end: 3%; }
+  .scene-text--s1 { top: 12vh; bottom: auto; padding: 0; inset-inline-start: 60%; inset-inline-end: 4%; }
   .scene-text--s1 h1 { font-size: clamp(2rem, 3.7vw, 3rem); }
   .scene-text--s1 .cta { display: grid; justify-content: stretch; }
 }
 @media (min-width: 1100px) and (max-width: 1299px) {
-  .scene-text--s1 { inset-inline-start: 72%; }
+  .scene-text--s1 { top: 12vh; inset-inline-start: 70%; }
   .scene-text--s1 h1 { font-size: clamp(2rem, 3vw, 2.4rem); }
 }
 
@@ -567,9 +569,6 @@ html[dir="rtl"] .desk-card::before { border-radius: 0 10px 10px 0; }
 .wizard-field__message .action-link { margin-inline-start: 0.6rem; }
 .wizard-field textarea { resize: vertical; }
 .wizard-field input:focus, .wizard-field select:focus, .wizard-field textarea:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
-.location-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
-.location-field input { border-radius: 2px 0 0 2px; }
-.location-field a { display: grid; place-items: center; border: 1px solid var(--gold); border-inline-start: 0; border-radius: 0 2px 2px 0; padding-inline: 0.85rem; color: var(--champagne); font-size: 0.62rem; white-space: nowrap; }
 .vehicle-choice { display: grid; gap: 0.8rem; }
 .vehicle-choice button { position: relative; display: grid; grid-template-columns: 180px minmax(0, 1fr) 32px; align-items: center; gap: 1.2rem; min-height: 150px; text-align: start; border: 1px solid rgba(255,255,255,0.12); border-radius: 3px; background: rgba(0,0,0,0.2); color: var(--white); padding: 1rem; cursor: pointer; }
 .vehicle-choice img { width: 100%; max-height: 120px; object-fit: contain; }
@@ -696,9 +695,6 @@ html[dir="rtl"] .desk-card::before { border-radius: 0 10px 10px 0; }
   .service-choice button { min-height: 68px; }
   .wizard-grid { grid-template-columns: 1fr; }
   .wizard-field--wide { grid-column: auto; }
-  .location-field { grid-template-columns: 1fr; }
-  .location-field input { border-radius: 2px 2px 0 0; }
-  .location-field a { min-height: 42px; border-inline: 1px solid var(--gold); border-top: 0; border-radius: 0 0 2px 2px; }
   .vehicle-choice button { grid-template-columns: 100px minmax(0, 1fr) 26px; gap: 0.65rem; min-height: 120px; }
   .package-grid { grid-template-columns: 1fr; }
   .vehicle-choice h3 { font-size: 1rem; }
