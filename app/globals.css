@@ -114,7 +114,7 @@ html[dir="rtl"] .nav__links { letter-spacing: 0; font-size: 0.95rem; }
   .nav__emblem { width: 44px; height: 44px; }
   .nav__emblem img { height: 64px; }
   .nav__wordmark strong { font-size: 0.98rem; letter-spacing: 0.08em; }
-  .nav__wordmark small { display: none; }
+  .nav__wordmark small { font-size: 0.5rem; letter-spacing: 0.14em; white-space: nowrap; }
   .nav__actions { gap: 0.35rem; }
   .nav__book { gap: 0.4rem; padding: 0.58rem 0.65rem; font-size: 0.55rem; letter-spacing: 0.08em; }
   .nav__toggle { width: 38px; height: 38px; }
