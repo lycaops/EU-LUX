@@ -39,7 +39,7 @@ export default function HomeDetails() {
             <a className="btn btn--ghost detail-cta" href="/book">{t.nav.book}<IconArrowUpRight /></a>
           </div>
           <figure className="fleet-detail__vehicle">
-            <img src="/scenes/ext_r.webp" alt="Mercedes-Benz V-Class V250 executive van" loading="lazy" />
+            <img src="/v250.webp" alt="Mercedes-Benz V-Class V250 executive van" loading="lazy" />
             <figcaption>V250 · Executive comfort for up to seven guests</figcaption>
           </figure>
         </div>
