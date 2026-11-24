@@ -28,7 +28,7 @@ export default function BookingConfiguration() {
     setBookingConfig((current) => ({
       ...current,
       [group]: [...current[group], group === "vehicles"
-        ? { id: `vehicle-${suffix}`, name: "New vehicle", passengers: 7, luggage: 7, image: "/v250.webp", note: "Available fleet", enabled: true }
+        ? { id: `vehicle-${suffix}`, name: "New vehicle", passengers: 7, luggage: 7, image: "/scenes/ext_r.webp", note: "Available fleet", enabled: true }
         : group === "extras"
           ? { id: `extra-${suffix}`, name: "New extra", price: "10", enabled: true }
           : group === "payments"

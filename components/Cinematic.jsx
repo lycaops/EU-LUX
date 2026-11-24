@@ -183,7 +183,7 @@ export default function Cinematic() {
         ))}
         <div className="van-reflection" aria-hidden="true" />
         <div className="van">
-          <img src="/v250.webp" alt="Mercedes-Benz V-Class V250" width="1671" height="941" />
+          <img src="/scenes/ext_r.webp" alt="Mercedes-Benz V-Class V250" width="2048" height="1024" />
         </div>
 
         {STEPS.map((key, i) => {
