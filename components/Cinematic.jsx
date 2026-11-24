@@ -84,7 +84,7 @@ export default function Cinematic() {
             4: { x: "0vw", y: "9vh", scale: 1.1 },   // experience
           },
           tablet: {
-            0: { x: "-14vw", y: "6vh", scale: 1.0 },  // hero
+            0: { x: "-17vw", y: "5vh", scale: 0.92 },  // hero
             1: { x: "-3vw", y: "9vh", scale: 1.14 },  // arrival
             4: { x: "12vw", y: "9vh", scale: 0.84 },  // experience
           },

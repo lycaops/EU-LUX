@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { IconArrowLeft, IconGoogle } from "@/components/Icons";
 
 const isConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
+
+// Google Identity Services client ID. When set, Google's own "Sign in with Google" button is
+// rendered and its ID token is exchanged for a Supabase session. Without it we fall back to
+// the Supabase OAuth redirect button.
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+const GSI_SRC = "https://accounts.google.com/gsi/client";
 
 const ERROR_MESSAGES = {
   configuration: "Customer sign-in is unavailable until Supabase is configured.",
@@ -22,10 +28,46 @@ export default function AccountLoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const googleButtonRef = useRef(null);
+  const credentialHandler = useRef(() => {});
 
   const getNextPath = () => {
     const next = new URLSearchParams(window.location.search).get("next");
     return next && next.startsWith("/") && !next.startsWith("//") ? next : "/account";
+  };
+
+  // Shared post-authentication gate: verifies the account role and sends the user to the
+  // right workspace.
+  const completeSignIn = async (supabase, user) => {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      const { error: signOutError } = await supabase.auth.signOut();
+      setError(signOutError
+        ? "Unable to verify account access, and sign-out failed. Please try again."
+        : "Unable to verify account access. Please try again.");
+      return;
+    }
+
+    if (profile?.role === "admin") {
+      window.location.assign("/admin/bookings?signedIn=1");
+      return;
+    }
+
+    if (profile?.role !== "customer") {
+      const { error: signOutError } = await supabase.auth.signOut();
+      setError(signOutError
+        ? `${ERROR_MESSAGES.unauthorized} Sign-out failed; please sign out and try again.`
+        : ERROR_MESSAGES.unauthorized);
+      return;
+    }
+
+    const next = getNextPath();
+    window.location.assign(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
   };
 
   useEffect(() => {
@@ -36,7 +78,100 @@ export default function AccountLoginPage() {
     if (reason && ERROR_MESSAGES[reason]) setError(ERROR_MESSAGES[reason]);
   }, []);
 
-  const signInWithGoogle = async () => {
+  // Exchange the Google Identity Services ID token for a Supabase session, then run the
+  // same role gate as the password flow.
+  const handleGoogleCredential = async (response) => {
+    setError("");
+    setSuccess("");
+
+    if (!response?.credential) {
+      setError(ERROR_MESSAGES.oauth);
+      return;
+    }
+
+    if (!isConfigured) {
+      setError(ERROR_MESSAGES.configuration);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { user }, error: authError } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: response.credential,
+      });
+
+      if (authError || !user) {
+        setError(ERROR_MESSAGES.oauth);
+        return;
+      }
+
+      await completeSignIn(supabase, user);
+    } catch {
+      setError("Unable to contact the sign-in service. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Keep the GIS callback pointing at the latest handler without re-initialising Google.
+  useEffect(() => {
+    credentialHandler.current = handleGoogleCredential;
+  });
+
+  // Load the Google script once, then render Google's official button into our container.
+  useEffect(() => {
+    if (!googleClientId) return;
+    let cancelled = false;
+
+    const render = () => {
+      if (cancelled || !window.google?.accounts?.id || !googleButtonRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: (response) => credentialHandler.current(response),
+      });
+      googleButtonRef.current.innerHTML = "";
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        type: "standard",
+        theme: "filled_black",
+        size: "large",
+        shape: "rectangular",
+        text: "signin_with",
+        logo_alignment: "left",
+        width: 240,
+      });
+    };
+
+    if (window.google?.accounts?.id) {
+      render();
+      return;
+    }
+
+    const existing = document.querySelector(`script[src="${GSI_SRC}"]`);
+    if (existing) {
+      existing.addEventListener("load", render);
+      return () => {
+        cancelled = true;
+        existing.removeEventListener("load", render);
+      };
+    }
+
+    const script = document.createElement("script");
+    script.src = GSI_SRC;
+    script.async = true;
+    script.defer = true;
+    script.addEventListener("load", render);
+    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+      script.removeEventListener("load", render);
+    };
+  }, []);
+
+  // Supabase OAuth redirect sign-in, used when no Google client ID is configured.
+  const signInWithGoogleRedirect = async () => {
     setError("");
     setSuccess("");
 
@@ -96,35 +231,7 @@ export default function AccountLoginPage() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        const { error: signOutError } = await supabase.auth.signOut();
-        setError(signOutError
-          ? "Unable to verify account access, and sign-out failed. Please try again."
-          : "Unable to verify account access. Please try again.");
-        return;
-      }
-
-      if (profile?.role === "admin") {
-        window.location.assign("/admin/bookings?signedIn=1");
-        return;
-      }
-
-      if (profile?.role !== "customer") {
-        const { error: signOutError } = await supabase.auth.signOut();
-        setError(signOutError
-          ? `${ERROR_MESSAGES.unauthorized} Sign-out failed; please sign out and try again.`
-          : ERROR_MESSAGES.unauthorized);
-        return;
-      }
-
-      const next = getNextPath();
-      window.location.assign(`${next}${next.includes("?") ? "&" : "?"}signedIn=1`);
+      await completeSignIn(supabase, user);
     } catch {
       setError("Unable to contact the sign-in service. Please try again.");
     } finally {
@@ -202,15 +309,19 @@ export default function AccountLoginPage() {
             <button type="button" aria-pressed={mode === "signup"} className={mode === "signup" ? "is-active" : ""} onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}>Create account</button>
           </div>
 
-          <button
-            type="button"
-            className="auth-card__oauth"
-            onClick={signInWithGoogle}
-            disabled={loading || !isConfigured}
-          >
-            <IconGoogle />
-            Continue with Google
-          </button>
+          {googleClientId ? (
+            <div className="auth-card__google" ref={googleButtonRef} />
+          ) : (
+            <button
+              type="button"
+              className="auth-card__oauth"
+              onClick={signInWithGoogleRedirect}
+              disabled={loading || !isConfigured}
+            >
+              <IconGoogle />
+              Continue with Google
+            </button>
+          )}
           <p className="auth-card__divider" aria-hidden="true"><span>or</span></p>
 
           <form onSubmit={mode === "signup" ? signUp : signIn}>
