@@ -510,7 +510,7 @@ function BookingRequest() {
                 </button>
                 {vehicles.map((vehicle) => (
                   <button type="button" key={vehicle.id} className={form.vehicle === vehicle.id ? "is-selected" : ""} onClick={() => update("vehicle", vehicle.id)}>
-                    <img src={vehicle.image_url || "/scenes/ext_r.webp"} alt={vehicle.name} />
+                    <img src={vehicle.image_url || "/v250.webp"} alt={vehicle.name} />
                     <div><p>Available fleet</p><h3>{vehicle.name}</h3><small>{vehicle.seats} passengers · {vehicle.luggage} luggage</small></div>
                     <span className="vehicle-choice__check"><IconCheck /></span>
                   </button>
