@@ -48,22 +48,20 @@ export default function Footer() {
           <button type="button" className="footer__cookie-btn" onClick={openCookieSettings}>
             {getLegal(lang).banner.settings}
           </button>
+          <p className="footer__vat">{t.footer.vat}: 05599350286</p>
         </div>
       </div>
       <div className="footer__legal">
         <span>© {new Date().getFullYear()} EU Luxury Tours &amp; Travels. {t.footer.rights}</span>
-        <div className="footer__legal-end">
-          <span>{t.footer.vat}: 05599350286</span>
-          <ul className="footer__social" aria-label="Social media">
-            {SOCIAL_LINKS.map(({ name, href, Icon }) => (
-              <li key={name}>
-                <a href={href} target="_blank" rel="noopener noreferrer" aria-label={name} title={name}>
-                  <Icon />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className="footer__social" aria-label="Social media">
+          {SOCIAL_LINKS.map(({ name, href, Icon }) => (
+            <li key={name}>
+              <a href={href} target="_blank" rel="noopener noreferrer" aria-label={name} title={name}>
+                <Icon />
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </footer>
   );

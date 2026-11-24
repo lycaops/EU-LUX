@@ -46,17 +46,19 @@ export default function CookieConsent() {
         <strong>{copy.title}</strong>
         <p>{copy.body}</p>
       </div>
-      <div className="cookie-consent__actions">
-        <button type="button" className="btn btn--ghost" onClick={() => decide("rejected")}>
-          {copy.reject}
-        </button>
-        <button type="button" className="btn btn--solid" onClick={() => decide("accepted")}>
-          {copy.accept}
-        </button>
+      <div className="cookie-consent__footer">
+        <Link className="cookie-consent__link" href="/privacy">
+          {copy.policy}
+        </Link>
+        <div className="cookie-consent__actions">
+          <button type="button" className="btn btn--ghost" onClick={() => decide("rejected")}>
+            {copy.reject}
+          </button>
+          <button type="button" className="btn btn--solid" onClick={() => decide("accepted")}>
+            {copy.accept}
+          </button>
+        </div>
       </div>
-      <Link className="cookie-consent__link" href="/privacy">
-        {copy.policy}
-      </Link>
     </div>
   );
 }

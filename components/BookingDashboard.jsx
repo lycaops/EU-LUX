@@ -5,7 +5,20 @@ import { getBookings, removeBooking, updateBooking } from "@/lib/bookings";
 import { getSignInGreeting } from "@/lib/supabase/greeting";
 import AdminSignOut from "@/components/AdminSignOut";
 import CustomerSignOut from "@/components/CustomerSignOut";
-import { IconArrowUpRight, IconClose, IconSearch, IconSpark } from "@/components/Icons";
+import {
+  IconArrowUpRight,
+  IconClose,
+  IconSearch,
+  IconSpark,
+  IconUsers,
+  IconMail,
+  IconPhone,
+  IconLuggage,
+  IconBriefcase,
+  IconCreditCard,
+  IconMap,
+  IconNotes,
+} from "@/components/Icons";
 
 const STATUS_OPTIONS = ["pending", "confirmed", "assigned", "completed", "cancelled"];
 const EMPTY_FILTER = "all";
@@ -37,6 +50,15 @@ function getQuoteVatRate(booking) {
   const vatLine = booking.quoteBreakdown.find((line) => /^VAT \(([\d.]+)%\)$/.test(line.label));
   const match = vatLine?.label.match(/^VAT \(([\d.]+)%\)$/);
   return match ? Number(match[1]) : 10;
+}
+
+function Fact({ icon, label, value }) {
+  return (
+    <li>
+      <span className="desk-facts__icon" aria-hidden="true">{icon}</span>
+      <div className="desk-facts__text"><span>{label}</span><strong>{value}</strong></div>
+    </li>
+  );
 }
 
 function FareEditor({ booking, onCancel, onSubmit, saving }) {
@@ -305,20 +327,26 @@ export default function BookingDashboard({ admin = false }) {
             <div className="desk-card__body">
               <div className="desk-card__col desk-card__col--journey">
                 <div className="booking-card__route">
-                  <div><span className="route-dot route-dot--start"/><div><small>Pick-up</small><strong>{booking.pickup}</strong></div></div>
-                  <span className="route-line" aria-hidden="true" />
-                  <div><span className="route-dot route-dot--end"/><div><small>Destination</small><strong>{booking.dropoff}</strong></div></div>
+                  <div className="route-stop">
+                    <span className="route-dot route-dot--start" aria-hidden="true" />
+                    <div className="route-stop__body"><small>Pick-up</small><strong>{booking.pickup || "To be confirmed"}</strong></div>
+                  </div>
+                  <span className="route-track" aria-hidden="true" />
+                  <div className="route-stop">
+                    <span className="route-dot route-dot--end" aria-hidden="true" />
+                    <div className="route-stop__body"><small>Destination</small><strong>{booking.dropoff || "To be confirmed"}</strong></div>
+                  </div>
                 </div>
                 <ul className="desk-facts">
-                  <li><span>Guest</span><strong>{booking.name}</strong></li>
-                  <li><span>Email</span><strong>{booking.email}</strong></li>
-                  <li><span>Phone</span><strong>{booking.phone || "Not provided"}</strong></li>
-                  <li><span>Guests</span><strong>{booking.passengers} pax · {booking.luggage} bags</strong></li>
-                  <li><span>Service</span><strong>{(booking.service || "transfer").replace("_", " ")}</strong></li>
-                  <li><span>Payment</span><strong>{booking.payment}</strong></li>
-                  {booking.distanceKm != null && <li><span>Distance</span><strong>{booking.distanceKm} km</strong></li>}
-                  {booking.tourPackageName && <li><span>Package</span><strong>{booking.tourPackageName}</strong></li>}
-                  {booking.notes && <li><span>Notes</span><strong>{booking.notes}</strong></li>}
+                  <Fact icon={<IconUsers />} label="Guest" value={booking.name} />
+                  <Fact icon={<IconMail />} label="Email" value={booking.email} />
+                  <Fact icon={<IconPhone />} label="Phone" value={booking.phone || "Not provided"} />
+                  <Fact icon={<IconLuggage />} label="Guests" value={`${booking.passengers} pax · ${booking.luggage} bags`} />
+                  <Fact icon={<IconBriefcase />} label="Service" value={(booking.service || "transfer").replace("_", " ")} />
+                  <Fact icon={<IconCreditCard />} label="Payment" value={booking.payment} />
+                  {booking.distanceKm != null && <Fact icon={<IconMap />} label="Distance" value={`${booking.distanceKm} km`} />}
+                  {booking.tourPackageName && <Fact icon={<IconSpark />} label="Package" value={booking.tourPackageName} />}
+                  {booking.notes && <Fact icon={<IconNotes />} label="Notes" value={booking.notes} />}
                 </ul>
                 {booking.specialRequest && <p className="desk-card__request"><strong>Customer request</strong>{booking.specialRequest}</p>}
                 {editing === booking.id && (

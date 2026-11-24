@@ -221,6 +221,26 @@ export function IconMail(props) {
   );
 }
 
+export function IconCreditCard(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="5.5" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M7 14.5h4" />
+    </svg>
+  );
+}
+
+export function IconNotes(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6.5 3.5h7l4.5 4.5V20a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
+      <path d="M13.5 3.5V8H18" />
+      <path d="M8.5 12.5h7M8.5 16h5" />
+    </svg>
+  );
+}
+
 export function IconGoogle(props) {
   return (
     <svg viewBox="0 0 24 24" className="icon-google" aria-hidden="true" focusable="false" {...props}>
