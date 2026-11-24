@@ -148,16 +148,18 @@ export default function Cinematic() {
           // van camera move
           const vanAt = i === 4 ? at - 0.2 : [2, 3].includes(i) ? at - 0.3 : at;
           if (i === 4) {
-            // Experience scene has two stages: the van first settles in its correct position on
-            // the road (matching the background), then zooms in and exits out of the bottom-left
-            // corner, fading away as the scroll continues.
-            tl.to(".van", { ...poseForStep(4), duration: 0.55 }, vanAt);
-            tl.to(".van-reflection", { opacity: 1, duration: 0.55 }, vanAt);
-            tl.to(".van", { ...exitPose(), opacity: 0, duration: 0.6, ease: "power2.in" }, vanAt + 0.55);
-            tl.to(".van-reflection", { opacity: 0, duration: 0.45 }, vanAt + 0.55);
+            // Experience scene: the van zooms in and then holds that position on the road while
+            // the copy is on screen. It does not move again until the copy starts to fade out.
+            tl.to(".van", { ...poseForStep(4), duration: 0.5 }, vanAt);
+            tl.to(".van-reflection", { opacity: 1, duration: 0.5 }, vanAt);
+          } else if (i === last) {
+            // As the experience copy fades away (same moment: at + 0.35), the van zooms in once
+            // more and sweeps off the bottom-left of the screen, disappearing with the scene.
+            tl.to(".van", { ...exitPose(), opacity: 0, duration: 0.7, ease: "power2.in" }, at + 0.35);
+            tl.to(".van-reflection", { opacity: 0, duration: 0.5 }, at + 0.35);
           } else {
             tl.to(".van", poseTo(i), vanAt);
-            tl.to(".van-reflection", { opacity: POSES[i].opacity ? 1 : 0, duration: i === 5 ? 0.45 : 0.6 }, vanAt);
+            tl.to(".van-reflection", { opacity: POSES[i].opacity ? 1 : 0, duration: 0.6 }, vanAt);
           }
         }
         tl.to(".booking", { autoAlpha: 1, y: 0, duration: 0.45 }, last - 0.05);
