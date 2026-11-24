@@ -48,7 +48,8 @@ export default function Footer() {
           <button type="button" className="footer__cookie-btn" onClick={openCookieSettings}>
             {getLegal(lang).banner.settings}
           </button>
-          <p className="footer__vat">{t.footer.vat}: 05599350286</p>
+          <h4 className="footer__vat-heading">{t.footer.vat}</h4>
+          <p className="footer__vat">05599350286</p>
         </div>
       </div>
       <div className="footer__legal">

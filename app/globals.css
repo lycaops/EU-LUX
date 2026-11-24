@@ -253,7 +253,8 @@ html[dir="rtl"] .footer h4 { letter-spacing: 0; font-size: 0.95rem; }
 .footer .footer__cookie-btn { display: block; width: 100%; padding: 0; margin-bottom: 0.4rem; border: 0; background: none; color: var(--grey); font: inherit; font-size: 0.9rem; text-align: start; cursor: pointer; }
 .footer .footer__cookie-btn:hover { color: var(--champagne); }
 .footer__legal { max-width: 1200px; margin: 3rem auto 0; padding-top: 1.5rem; border-top: 1px solid #262626; color: var(--grey); font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem 1.4rem; }
-.footer__vat { margin-top: 0.5rem; }
+.footer__vat-heading { margin-top: 1.6rem; }
+.footer__vat { margin: 0; color: var(--champagne); letter-spacing: 0.02em; }
 .footer__social { display: flex; align-items: center; gap: 0.55rem; list-style: none; }
 .footer .footer__social a { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; margin: 0; border: 1px solid rgba(198,161,91,0.32); border-radius: 50%; color: rgba(255,255,255,0.7); transition: color 0.25s, background 0.25s, border-color 0.25s; }
 .footer .footer__social a:hover { color: var(--black); background: var(--gold); border-color: var(--gold); }
