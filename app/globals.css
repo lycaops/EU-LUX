@@ -477,10 +477,13 @@ html[dir="rtl"] .desk-card::before { border-radius: 0 10px 10px 0; }
 .auth-card__customer-link a { color: var(--champagne); text-decoration: underline; text-underline-offset: 3px; }
 .auth-card__oauth { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; min-height: 50px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.04); color: #fff; font: inherit; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: background 180ms ease, border-color 180ms ease; }
 .auth-card__oauth:hover:not(:disabled) { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
-.auth-card__oauth .icon { width: 18px; height: 18px; }
-/* Container for Google's rendered Identity Services button (a fixed-width iframe wrapper). */
+.auth-card__oauth .icon-google { width: 18px; height: 18px; }
+/* The Google mark is multi-colour, so it must not inherit the generic `.icon` stroke/fill rules. */
+.icon-google { width: 1em; height: 1em; flex: none; }
+/* Container for Google's rendered Identity Services button. Kept as a centring wrapper only: the
+   iframe is never allowed to shrink, otherwise Google's button gets clipped. */
 .auth-card__google { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 50px; }
-.auth-card__google > div { width: 240px !important; }
+.auth-card__google iframe { flex: none; }
 .auth-card__divider { display: flex; align-items: center; gap: 0.85rem; margin: 1.15rem 0; color: rgba(255,255,255,0.42); font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; }
 .auth-card__divider::before, .auth-card__divider::after { content: ""; height: 1px; flex: 1; background: rgba(255,255,255,0.14); }
 .admin-login__error { margin-top: 1rem; color: #e4a197; font-size: 0.78rem; }

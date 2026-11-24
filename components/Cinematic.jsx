@@ -81,17 +81,17 @@ export default function Cinematic() {
           mobile: {
             0: { x: "0vw", y: "5vh", scale: 1.16 },  // hero
             1: { x: "0vw", y: "10vh", scale: 1.3 },  // arrival
-            4: { x: "0vw", y: "9vh", scale: 1.1 },   // experience
+            4: { x: "-78vw", y: "72vh", scale: 2.8 }, // experience: zooms in and exits bottom-left
           },
           tablet: {
             0: { x: "-17vw", y: "5vh", scale: 0.92 },  // hero
             1: { x: "-3vw", y: "9vh", scale: 1.14 },  // arrival
-            4: { x: "12vw", y: "9vh", scale: 0.84 },  // experience
+            4: { x: "-80vw", y: "68vh", scale: 2.6 },  // experience: zooms in and exits bottom-left
           },
           desktop: {
             0: { x: "-17vw", y: "7vh", scale: 1.04 }, // hero
             1: { x: "-4vw", y: "10vh", scale: 1.18 }, // arrival
-            4: { x: "14vw", y: "10vh", scale: 0.88 }, // experience
+            4: { x: "-80vw", y: "68vh", scale: 2.8 }, // experience: zooms in and exits bottom-left
           },
         };
         const poseForStep = (i) => {
@@ -140,7 +140,8 @@ export default function Cinematic() {
           // van camera move
           const vanAt = i === 4 ? at - 0.2 : [2, 3].includes(i) ? at - 0.3 : at;
           tl.to(".van", poseTo(i), vanAt);
-          tl.to(".van-reflection", { opacity: POSES[i].opacity ? 1 : 0, duration: i === 4 ? 1.2 : i === 5 ? 0.45 : 0.6 }, vanAt);
+          // The reflection is hidden at the experience scene because the van leaves the road.
+          tl.to(".van-reflection", { opacity: i === 4 ? 0 : POSES[i].opacity ? 1 : 0, duration: i === 4 ? 1.2 : i === 5 ? 0.45 : 0.6 }, vanAt);
         }
         tl.to(".booking", { autoAlpha: 1, y: 0, duration: 0.45 }, last - 0.05);
       }, root);
