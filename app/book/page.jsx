@@ -7,7 +7,7 @@ import { getBookingConfig } from "@/lib/bookingConfig";
 import { getSignInGreeting } from "@/lib/supabase/greeting";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import AvailabilityDatePicker from "@/components/AvailabilityDatePicker";
-import { IconArrowRight, IconCheck } from "@/components/Icons";
+import { IconArrowRight, IconCheck, IconMap } from "@/components/Icons";
 
 const TARIFF_SERVICE = { transfer: "transfer", hourly: "hourly", tour: "daily" };
 const currency = (amount) => new Intl.NumberFormat(undefined, { style: "currency", currency: "EUR" }).format(amount);
@@ -417,24 +417,31 @@ function BookingRequest() {
               </div>
               {loadingCatalog && <p className="booking-catalog-loading" role="status">Loading live vehicles, packages, and fares...</p>}
               {form.service === "tour" && tourPackages.length > 0 && (
-                <div className="vehicle-choice vehicle-choice--packages">
-                  {tourPackages.map((item) => (
-                    <button type="button" key={item.id} className={form.tourPackageId === item.id ? "is-selected" : ""} onClick={() => update("tourPackageId", item.id)}>
-                      {item.image_url && <img src={item.image_url} alt={item.name} />}
-                      <div className="tour-package-card__details">
-                        <p>{item.pickup_city ? `From ${item.pickup_city}` : "Private tour"} · {item.duration_hours} hours</p>
-                        <h3>{item.name}</h3>
-                        {item.description && <small>{item.description}</small>}
-                        {item.itinerary && (
-                          <ul>
-                            {item.itinerary.split("\n").map((line, index) => line.trim() && <li key={index}>{line.trim().replace(/^[-•]\s*/, "")}</li>)}
-                          </ul>
-                        )}
-                      </div>
-                      <strong>{currency(Number(item.price))}</strong>
-                      <span className="vehicle-choice__check"><IconCheck /></span>
-                    </button>
-                  ))}
+                <div className="package-grid">
+                  {tourPackages.map((item) => {
+                    const selected = form.tourPackageId === item.id;
+                    return (
+                      <button type="button" key={item.id} className={`package-card${selected ? " is-selected" : ""}`} onClick={() => update("tourPackageId", item.id)}>
+                        <figure className="package-card__media">
+                          {item.image_url
+                            ? <img src={item.image_url} alt={item.name} loading="lazy" />
+                            : <span className="package-card__placeholder" aria-hidden="true"><IconMap /></span>}
+                          <span className="package-card__price">{currency(Number(item.price))}<small>from · per vehicle</small></span>
+                        </figure>
+                        <div className="package-card__body">
+                          <p className="package-card__meta">{item.pickup_city ? `From ${item.pickup_city}` : "Private tour"}<span>·</span>{item.duration_hours} hours</p>
+                          <h3>{item.name}</h3>
+                          {item.description && <p className="package-card__desc">{item.description}</p>}
+                          {item.itinerary && (
+                            <ul className="package-card__itinerary">
+                              {item.itinerary.split("\n").map((line, index) => line.trim() && <li key={index}>{line.trim().replace(/^[-•]\s*/, "")}</li>)}
+                            </ul>
+                          )}
+                          <span className="package-card__select">{selected ? <><IconCheck />Selected</> : "Select this package"}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
               <div className="wizard-grid">

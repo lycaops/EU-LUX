@@ -74,18 +74,30 @@ export default function Cinematic() {
         const mobile = window.innerWidth < 800;
         const tablet = window.innerWidth < 1100;
         const last = STEPS.length - 1;
-        // On small screens the van is kept large and anchored low in the frame so it
-        // reads clearly against the background instead of shrinking away from it.
-        const MOBILE_POSES = {
-          0: { x: "0vw", y: "5vh", scale: 1.16 }, // hero
-          1: { x: "0vw", y: "10vh", scale: 1.3 }, // arrival
-          4: { x: "0vw", y: "9vh", scale: 1.1 },  // experience
+        // Van placement per breakpoint. The van shares the same ground line as the
+        // background photo and keeps a believable size on every screen, so it always
+        // reads as part of the scene instead of floating away from it.
+        const VAN_POSES = {
+          mobile: {
+            0: { x: "0vw", y: "5vh", scale: 1.16 },  // hero
+            1: { x: "0vw", y: "10vh", scale: 1.3 },  // arrival
+            4: { x: "0vw", y: "9vh", scale: 1.1 },   // experience
+          },
+          tablet: {
+            0: { x: "-14vw", y: "6vh", scale: 1.0 },  // hero
+            1: { x: "-3vw", y: "9vh", scale: 1.14 },  // arrival
+            4: { x: "12vw", y: "9vh", scale: 0.84 },  // experience
+          },
+          desktop: {
+            0: { x: "-17vw", y: "7vh", scale: 1.04 }, // hero
+            1: { x: "-4vw", y: "10vh", scale: 1.18 }, // arrival
+            4: { x: "14vw", y: "10vh", scale: 0.88 }, // experience
+          },
         };
         const poseForStep = (i) => {
-          if (mobile && MOBILE_POSES[i]) return { ...POSES[i], ...MOBILE_POSES[i] };
-          if (i > 1) return POSES[i];
-          if (tablet) return { ...POSES[i], x: i === 0 ? "-18vw" : "-8vw", y: i === 0 ? "4vh" : "2vh", scale: i === 0 ? 0.6 : 0.88 };
-          return POSES[i];
+          if (!(i in VAN_POSES.desktop)) return POSES[i];
+          const group = mobile ? VAN_POSES.mobile : tablet ? VAN_POSES.tablet : VAN_POSES.desktop;
+          return { ...POSES[i], ...group[i] };
         };
 
         gsap.set(".van", { ...poseForStep(0), xPercent: -50, transformPerspective: 1200 });
@@ -110,7 +122,6 @@ export default function Cinematic() {
 
         // Slow ambient parallax on every background for the full run.
         tl.fromTo(bgs, { scale: 1.06 }, { scale: 1.16, duration: last, ease: "none" }, 0);
-        tl.fromTo(".road", { backgroundPositionX: 0 }, { backgroundPositionX: "-900px", duration: last, ease: "none" }, 0);
 
         const poseTo = (i) => ({ ...poseForStep(i), duration: i === 4 ? 1.2 : i === 5 ? 0.45 : 0.9 });
         for (let i = 1; i <= last; i++) {
@@ -130,8 +141,6 @@ export default function Cinematic() {
           const vanAt = i === 4 ? at - 0.2 : [2, 3].includes(i) ? at - 0.3 : at;
           tl.to(".van", poseTo(i), vanAt);
           tl.to(".van-reflection", { opacity: POSES[i].opacity ? 1 : 0, duration: i === 4 ? 1.2 : i === 5 ? 0.45 : 0.6 }, vanAt);
-          // road lines only during the journey scene
-          tl.to(".road", { opacity: i === 3 ? 0.55 : 0, duration: 0.5 }, at + 0.2);
         }
         tl.to(".booking", { autoAlpha: 1, y: 0, duration: 0.45 }, last - 0.05);
       }, root);
@@ -152,7 +161,6 @@ export default function Cinematic() {
         {[1, 2, 3, 4, 5, 6].map((n) => (
           <div key={n} className={`scene-bg bg-${n}`} aria-hidden="true" />
         ))}
-        <div className="road" aria-hidden="true" />
         <div className="van-reflection" aria-hidden="true" />
         <div className="van">
           <img src="/scenes/ext_r.webp" alt="Mercedes-Benz V-Class V250" width="2048" height="1024" />
