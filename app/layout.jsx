@@ -2,6 +2,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import CookieConsent from "@/components/CookieConsent";
 
 export const metadata = {
   title: "EU Luxury Tours & Travels | Premium Chauffeur Service Italy",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
           <Nav />
           <main>{children}</main>
           <Footer />
+          <CookieConsent />
         </LanguageProvider>
       </body>
     </html>
