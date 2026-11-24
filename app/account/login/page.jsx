@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { IconArrowLeft } from "@/components/Icons";
+import { IconArrowLeft, IconGoogle } from "@/components/Icons";
 
 const isConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -11,6 +11,7 @@ const isConfigured = Boolean(
 const ERROR_MESSAGES = {
   configuration: "Customer sign-in is unavailable until Supabase is configured.",
   unauthorized: "This account does not have customer access.",
+  oauth: "Google sign-in could not be completed. Please try again.",
 };
 
 export default function AccountLoginPage() {
@@ -34,6 +35,38 @@ export default function AccountLoginPage() {
     const reason = new URLSearchParams(window.location.search).get("error");
     if (reason && ERROR_MESSAGES[reason]) setError(ERROR_MESSAGES[reason]);
   }, []);
+
+  const signInWithGoogle = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!isConfigured) {
+      setError(ERROR_MESSAGES.configuration);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const next = getNextPath();
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+
+      if (oauthError) {
+        setError("Unable to start Google sign-in. Please try again.");
+        setLoading(false);
+      }
+      // On success the browser leaves for Google, so the button stays in its loading state.
+    } catch {
+      setError("Unable to contact the sign-in service. Please try again.");
+      setLoading(false);
+    }
+  };
 
   const signIn = async (event) => {
     event.preventDefault();
@@ -168,6 +201,17 @@ export default function AccountLoginPage() {
             <button type="button" aria-pressed={mode === "signin"} className={mode === "signin" ? "is-active" : ""} onClick={() => { setMode("signin"); setError(""); setSuccess(""); }}>Sign in</button>
             <button type="button" aria-pressed={mode === "signup"} className={mode === "signup" ? "is-active" : ""} onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}>Create account</button>
           </div>
+
+          <button
+            type="button"
+            className="auth-card__oauth"
+            onClick={signInWithGoogle}
+            disabled={loading || !isConfigured}
+          >
+            <IconGoogle />
+            Continue with Google
+          </button>
+          <p className="auth-card__divider" aria-hidden="true"><span>or</span></p>
 
           <form onSubmit={mode === "signup" ? signUp : signIn}>
             {mode === "signup" && (

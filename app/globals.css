@@ -160,9 +160,10 @@ html[dir="rtl"] .scene-text .eyebrow { letter-spacing: 0; font-size: 0.95rem; }
 .scene-text p { color: rgba(255,255,255,0.92); max-width: 620px; margin: 1.3rem auto 0; font-size: clamp(0.95rem, 1.6vw, 1.15rem); }
 /* Keep the hero copy legible against every background photo. */
 .scene-text h1, .scene-text h2, .scene-text p, .scene-text .eyebrow { text-shadow: 0 2px 22px rgba(0,0,0,0.82), 0 1px 4px rgba(0,0,0,0.7); }
-/* First scene copy sits above the vehicle instead of centring into it, so tall screens
-   keep the "Your journey, our privilege" block clear of the van, matching mobile. */
-.scene-text--s1 { top: 13vh; bottom: auto; padding: 0; inset-inline: 70% 3%; text-align: start; }
+/* First scene copy shares the vehicle's vertical band on wide screens: the block is centred
+   (with no downward padding offset) so it sits level with the van on desktop, and on tall
+   viewports it naturally rests above the van instead of drifting into it. */
+.scene-text--s1 { top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; padding: 0; inset-inline: 70% 3%; text-align: start; }
 .scene-text--s2 { top: 9%; inset-inline: 8%; text-align: center; }
 .scene-text--s1 h1 { font-size: clamp(2rem, 3.2vw, 3.2rem); }
 .scene-text--s2 h2 { font-size: clamp(2.4rem, 4.2vw, 4.2rem); }
@@ -232,7 +233,7 @@ html[dir="rtl"] .booking label { letter-spacing: 0; font-size: 0.85rem; }
   .scene-text--s1 .cta { display: grid; justify-content: stretch; }
 }
 @media (min-width: 1100px) and (max-width: 1299px) {
-  .scene-text--s1 { top: 12vh; inset-inline-start: 70%; }
+  .scene-text--s1 { inset-inline-start: 72%; }
   .scene-text--s1 h1 { font-size: clamp(2rem, 3vw, 2.4rem); }
 }
 
@@ -471,6 +472,11 @@ html[dir="rtl"] .desk-card::before { border-radius: 0 10px 10px 0; }
 .auth-card__back { display: inline-block; margin-top: 1.5rem; color: var(--champagne); font-size: 0.75rem; }
 .auth-card__customer-link { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.56); font-size: 0.72rem; }
 .auth-card__customer-link a { color: var(--champagne); text-decoration: underline; text-underline-offset: 3px; }
+.auth-card__oauth { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; width: 100%; min-height: 50px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.04); color: #fff; font: inherit; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: background 180ms ease, border-color 180ms ease; }
+.auth-card__oauth:hover:not(:disabled) { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+.auth-card__oauth .icon { width: 18px; height: 18px; }
+.auth-card__divider { display: flex; align-items: center; gap: 0.85rem; margin: 1.15rem 0; color: rgba(255,255,255,0.42); font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; }
+.auth-card__divider::before, .auth-card__divider::after { content: ""; height: 1px; flex: 1; background: rgba(255,255,255,0.14); }
 .admin-login__error { margin-top: 1rem; color: #e4a197; font-size: 0.78rem; }
 .admin-login__success { margin-top: 1rem; color: var(--champagne); font-size: 0.78rem; }
 .auth-card .admin-login__error, .auth-card .admin-login__success { line-height: 1.55; }
