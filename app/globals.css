@@ -222,6 +222,9 @@ html[dir="rtl"] .booking label { letter-spacing: 0; font-size: 0.85rem; }
   .scene-text--s7 { top: 8%; }
   .scene-text--s4 h2, .scene-text--s5 h2, .scene-text--s6 h2, .scene-text--s7 h2 { font-size: clamp(2.2rem, 7vw, 3.8rem); }
   .van-reflection { bottom: 4%; width: min(92vw, 860px); }
+  /* v250.webp is framed with the vehicle pushed to the right, so nudge the image left on
+     small screens to keep the van visually centred the way the previous art was. */
+  .van img { transform: translateX(-8.2%); }
   /* Keep the hero booking panel inside the pinned stage on small screens. */
   .booking { bottom: 3%; width: 94vw; padding: 1rem; max-height: 86svh; overflow-y: auto; }
   .booking form { gap: 0.6rem; }
