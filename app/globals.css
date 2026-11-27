@@ -317,7 +317,7 @@ body.has-cookie-consent .suggest { bottom: 11rem; }
 .fleet-specs dt { color: rgba(255,255,255,0.5); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; }
 .fleet-specs dd { color: var(--white); font-family: var(--serif); font-size: 1.8rem; }
 .fleet-detail__vehicle { display: grid; justify-items: center; }
-.fleet-detail__vehicle img { width: 100%; max-height: 430px; object-fit: contain; }
+.fleet-detail__vehicle img { width: 100%; max-height: 430px; object-fit: contain; filter: drop-shadow(0 26px 34px rgba(0,0,0,0.6)) drop-shadow(0 8px 14px rgba(0,0,0,0.45)); }
 .fleet-detail__vehicle figcaption { color: rgba(255,255,255,0.5); font-size: 0.7rem; letter-spacing: 0.08em; }
 .detail-cta { margin-top: 1rem; border-radius: 999px; padding: 0.8rem 1.25rem; font-size: 0.68rem; }
 .interior-detail { background: linear-gradient(rgba(8,8,8,0.68), rgba(8,8,8,0.82)), url("/scenes/fir.webp") center / cover no-repeat; }
