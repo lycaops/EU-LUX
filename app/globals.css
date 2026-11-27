@@ -344,6 +344,70 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   .service-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
 }
 
+/* Scroll-driven fleet spec scene (between fleet and interior) */
+.vs-track { position: relative; height: 360vh; }
+.vs-scene {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: #17140f;
+}
+.vs-bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
+  user-select: none;
+}
+.vs-canvas { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; }
+.vs-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  padding: clamp(5.5rem, 12vh, 9rem) clamp(1.2rem, 6vw, 6rem) clamp(1.2rem, 4vw, 3rem);
+  pointer-events: none;
+}
+.vs-copy {
+  max-width: 440px;
+  padding: clamp(1.2rem, 2.5vw, 2rem);
+  background: linear-gradient(150deg, rgba(8,8,8,0.74), rgba(8,8,8,0.42));
+  border: 1px solid rgba(229,205,155,0.22);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  transition: opacity 120ms linear;
+}
+.vs-eyebrow { color: var(--gold); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 0.75rem; }
+.vs-copy h2 { font-size: clamp(1.7rem, 3.4vw, 2.9rem); color: var(--white); text-shadow: 0 2px 18px rgba(0,0,0,0.7); }
+.vs-body { margin-top: 0.7rem; color: rgba(255,255,255,0.72); font-size: 0.92rem; }
+.vs-specs { display: grid; gap: 0.75rem; margin-top: 1.4rem; }
+.vs-specs div { display: flex; align-items: baseline; justify-content: space-between; gap: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.vs-specs dt { display: inline-flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.5); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.vs-specs dt .icon { width: 14px; height: 14px; color: var(--gold); }
+.vs-specs dd { color: var(--champagne); font-family: var(--serif); font-size: 1.15rem; white-space: nowrap; }
+.vs-hint { margin-top: 1.2rem; color: var(--gold); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; }
+html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-hint { letter-spacing: 0; }
+@media (max-width: 760px) {
+  .vs-copy { max-width: none; }
+  .vs-specs dd { font-size: 1rem; }
+}
+@media (max-width: 480px) {
+  .vs-overlay { padding-top: 4.5rem; }
+  .vs-copy h2 { font-size: clamp(1.5rem, 7vw, 2rem); }
+}
+
 /* Booking request and management workspaces */
 .workspace, .request-page { --line: rgba(229,205,155,0.2); --muted: rgba(255,255,255,0.58); min-height: 100vh; padding: 9rem clamp(1.2rem, 6vw, 6rem) 5rem; background: radial-gradient(ellipse at 82% 9%, rgba(198,161,91,0.09), transparent 34%), linear-gradient(135deg, #0b0b0a, #11110f 56%, #0a0a09); }
 .admin-navigation { max-width: 1360px; margin: 7rem auto 0; padding: 0 clamp(1.2rem, 6vw, 6rem); }

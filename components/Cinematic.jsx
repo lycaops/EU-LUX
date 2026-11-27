@@ -81,19 +81,16 @@ export default function Cinematic() {
           mobile: {
             0: { x: "0vw", y: "5vh", scale: 1.16 },  // hero
             1: { x: "0vw", y: "10vh", scale: 1.3 },  // arrival
-            2: { x: "0vw", y: "10vh", scale: 1.7, opacity: 0.9 },  // arrival ending: enlarge in place, stay visible
             4: { x: "0vw", y: "9vh", scale: 1.1 },   // experience: resting pose on the road
           },
           tablet: {
             0: { x: "-17vw", y: "5vh", scale: 0.92 },  // hero
             1: { x: "-3vw", y: "9vh", scale: 1.14 },  // arrival
-            2: { x: "-3vw", y: "9vh", scale: 1.7, opacity: 0.9 },  // arrival ending: enlarge in place, stay visible
             4: { x: "12vw", y: "9vh", scale: 0.84 },  // experience: resting pose on the road
           },
           desktop: {
             0: { x: "-17vw", y: "7vh", scale: 1.04 }, // hero
             1: { x: "-4vw", y: "10vh", scale: 1.18 }, // arrival
-            2: { x: "-4vw", y: "10vh", scale: 1.7, opacity: 0.9 }, // arrival ending: enlarge in place, stay visible
             4: { x: "14vw", y: "10vh", scale: 0.88 }, // experience: resting pose on the road
           },
         };
@@ -160,6 +157,11 @@ export default function Cinematic() {
             // more and sweeps off the bottom-left of the screen, disappearing with the scene.
             tl.to(".van", { ...exitPose(), opacity: 0, duration: 0.7, ease: "power2.in" }, at + 0.35);
             tl.to(".van-reflection", { opacity: 0, duration: 0.5 }, at + 0.35);
+          } else if (i === 2) {
+            // The exterior scene uses a photograph that already contains the vehicle, so the
+            // animated van clears the frame just before that scene begins.
+            tl.to(".van", { opacity: 0, duration: 0.3 }, vanAt);
+            tl.to(".van-reflection", { opacity: 0, duration: 0.3 }, vanAt);
           } else {
             tl.to(".van", poseTo(i), vanAt);
             tl.to(".van-reflection", { opacity: POSES[i].opacity ? 1 : 0, duration: 0.6 }, vanAt);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useLang } from "./LanguageProvider";
+import VehicleScene from "./VehicleScene";
 import {
   IconArrowUpRight,
   IconUsers,
@@ -44,6 +45,8 @@ export default function HomeDetails() {
           </figure>
         </div>
       </section>
+
+      <VehicleScene />
 
       <section className="home-detail interior-detail" id="interior">
         <div className="home-detail__inner">
