@@ -293,39 +293,41 @@ export default function VehicleScene() {
           <img className="vs-bg" ref={bgRef} src={BG_SRC} alt="" aria-hidden="true" />
           <canvas className="vs-canvas" ref={canvasRef} role="img" aria-label={spec.body} />
           <div className="vs-overlay">
-            <div className="vs-copy" ref={specsRef}>
-              <p className="vs-eyebrow">{spec.eyebrow}</p>
-              <h2>{spec.title}</h2>
-              <p className="vs-body">{spec.body}</p>
-              <dl className="vs-specs">
-                {spec.specs.map((item, index) => {
-                  const Icon = SPEC_ICONS[index % SPEC_ICONS.length];
-                  return (
+            <div className="vs-overlay__inner">
+              <div className="vs-copy" ref={specsRef}>
+                <p className="vs-eyebrow">{spec.eyebrow}</p>
+                <h2>{spec.title}</h2>
+                <p className="vs-body">{spec.body}</p>
+                <dl className="vs-specs">
+                  {spec.specs.map((item, index) => {
+                    const Icon = SPEC_ICONS[index % SPEC_ICONS.length];
+                    return (
+                      <div key={item.label}>
+                        <dt><Icon />{item.label}</dt>
+                        <dd>{item.value}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+                <p className="vs-group-label">{spec.performanceLabel}</p>
+                <dl className="vs-specs vs-specs--perf">
+                  {spec.performance.map((item) => (
                     <div key={item.label}>
-                      <dt><Icon />{item.label}</dt>
+                      <dt>{item.label}</dt>
                       <dd>{item.value}</dd>
                     </div>
-                  );
-                })}
-              </dl>
-              <p className="vs-group-label">{spec.performanceLabel}</p>
-              <dl className="vs-specs vs-specs--perf">
-                {spec.performance.map((item) => (
-                  <div key={item.label}>
-                    <dt>{item.label}</dt>
-                    <dd>{item.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              <div className="vs-features-group">
-                <p className="vs-group-label">{spec.featuresLabel}</p>
-                <ul className="vs-features">
-                  {spec.features.map((feature) => (
-                    <li key={feature}><IconCheck />{feature}</li>
                   ))}
-                </ul>
+                </dl>
+                <div className="vs-features-group">
+                  <p className="vs-group-label">{spec.featuresLabel}</p>
+                  <ul className="vs-features">
+                    {spec.features.map((feature) => (
+                      <li key={feature}><IconCheck />{feature}</li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="vs-hint">{spec.hint}</p>
               </div>
-              <p className="vs-hint">{spec.hint}</p>
             </div>
           </div>
           <div className="vs-vip" ref={vipRef}>

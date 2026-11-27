@@ -377,10 +377,20 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   inset: 0;
   z-index: 0;
   display: flex;
+  justify-content: center;
   align-items: flex-start;
   /* Top edge meets the fixed nav (14px inset + 80px min-height). */
-  padding: 5.9rem clamp(1.2rem, 5vw, 5rem) clamp(1.2rem, 4vw, 3rem);
+  padding: 5.9rem clamp(1.2rem, 6vw, 6rem) clamp(1.2rem, 4vw, 3rem);
   pointer-events: none;
+}
+/* Share the .home-detail__inner column so the panel's "The Fleet" heading lines
+   up with the section copy below it at every width. */
+.vs-overlay__inner {
+  width: 100%;
+  max-width: 1240px;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
 }
 .vs-copy {
   width: min(440px, 90vw);
@@ -450,7 +460,7 @@ html[dir="rtl"] .vs-vip__eyebrow { letter-spacing: 0; font-size: 0.95rem; }
 }
 @media (max-width: 760px) {
   /* Fit the panel to the viewport; it never scrolls, so no scrollbar is shown. */
-  .vs-overlay { padding: calc(5rem + env(safe-area-inset-top, 0px)) 1rem 1rem; }
+  .vs-overlay { padding: calc(5rem + env(safe-area-inset-top, 0px)) clamp(1.2rem, 6vw, 6rem) 1rem; }
   .vs-copy {
     width: min(100%, 30rem);
     max-height: calc(100dvh - 6rem);
@@ -469,7 +479,8 @@ html[dir="rtl"] .vs-vip__eyebrow { letter-spacing: 0; font-size: 0.95rem; }
   .vs-hint { margin-top: 0.7rem; }
   /* The panel has cleared before the invitation arrives, so the lead sits at the
      top and the closing line at the bottom, clear of the cabin close-up. */
-  .vs-vip { padding: calc(4.75rem + env(safe-area-inset-top, 0px)) 1rem 1.5rem; }
+  /* Clears the 10px inset + 70px mobile nav (80px) before the invitation shows. */
+  .vs-vip { padding: calc(5.5rem + env(safe-area-inset-top, 0px)) 1rem 1.5rem; }
   .vs-vip__lead, .vs-vip__body { width: min(100%, 30rem); }
   .vs-vip__eyebrow { font-size: 0.66rem; letter-spacing: 0.3em; margin-bottom: 0.7rem; }
   .vs-vip h2 { font-size: clamp(1.5rem, 6.4vw, 2.1rem); }
