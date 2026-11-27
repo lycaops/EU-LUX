@@ -370,32 +370,51 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   pointer-events: none;
   user-select: none;
 }
-.vs-canvas { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; }
+.vs-canvas { position: absolute; inset: 0; z-index: 2; display: block; width: 100%; height: 100%; pointer-events: none; }
+.vs-annot {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 3rem);
+  padding: clamp(5.5rem, 9vh, 7rem) clamp(1.2rem, 5vw, 4.5rem) clamp(1.5rem, 5vw, 3rem);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+.vs-annot__col { display: flex; flex-direction: column; gap: 0.7rem; list-style: none; }
+.vs-annot__col--start { align-items: flex-start; text-align: start; }
+.vs-annot__col--end { align-items: flex-end; text-align: end; }
+.vs-annot__col li { display: flex; flex-direction: column; gap: 0.1rem; }
+.vs-annot__label { color: var(--gold); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; }
+.vs-annot__value { color: var(--white); font-family: var(--serif); font-size: 1.1rem; line-height: 1.2; text-shadow: 0 2px 12px rgba(0,0,0,0.8); }
 .vs-overlay {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   display: flex;
   align-items: flex-start;
   padding: clamp(5.5rem, 9vh, 7rem) clamp(1.2rem, 6vw, 6rem) clamp(1.2rem, 4vw, 3rem);
   pointer-events: none;
 }
+/* The panel sits behind the vehicle and is sized to the viewport; its scrollbar stays hidden. */
 .vs-copy {
-  max-width: 440px;
-  max-height: calc(100dvh - 8rem);
+  max-width: 420px;
+  max-height: calc(100dvh - 7rem);
   overflow-y: auto;
-  scrollbar-width: thin;
-  padding: clamp(1.2rem, 2.5vw, 2rem);
-  background: linear-gradient(150deg, rgba(8,8,8,0.74), rgba(8,8,8,0.42));
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: clamp(1.1rem, 2.2vw, 1.7rem);
+  background: linear-gradient(150deg, rgba(8,8,8,0.72), rgba(8,8,8,0.4));
   border: 1px solid rgba(229,205,155,0.22);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   transition: opacity 120ms linear;
   pointer-events: auto;
 }
-.vs-copy::-webkit-scrollbar { width: 6px; }
-.vs-copy::-webkit-scrollbar-track { background: transparent; }
-.vs-copy::-webkit-scrollbar-thumb { background: rgba(229,205,155,0.32); border-radius: 3px; }
+.vs-copy::-webkit-scrollbar { display: none; }
 .vs-eyebrow { color: var(--gold); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 0.75rem; }
 .vs-copy h2 { font-size: clamp(1.6rem, 2.6vw, 2.4rem); color: var(--white); text-shadow: 0 2px 18px rgba(0,0,0,0.7); }
 .vs-body { margin-top: 0.6rem; color: rgba(255,255,255,0.72); font-size: 0.9rem; }
@@ -412,15 +431,15 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 .vs-features li { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.6rem; border: 1px solid rgba(229,205,155,0.24); border-radius: 999px; color: rgba(255,255,255,0.82); font-size: 0.66rem; letter-spacing: 0.04em; }
 .vs-features .icon { width: 12px; height: 12px; color: var(--gold); flex: none; }
 .vs-hint { margin-top: 1.2rem; color: var(--gold); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; }
-html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-hint, html[dir="rtl"] .vs-group-label, html[dir="rtl"] .vs-features li { letter-spacing: 0; }
+html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-hint, html[dir="rtl"] .vs-group-label, html[dir="rtl"] .vs-features li, html[dir="rtl"] .vs-annot__label { letter-spacing: 0; }
 @media (max-width: 760px) {
-  /* The copy panel is capped and scrolls internally so it never sits on top of the van. */
+  /* The panel is capped to the free area above the vehicle so its copy stays readable. */
   .vs-overlay { padding: calc(4.4rem + env(safe-area-inset-top, 0px)) 1.1rem 1rem; }
   .vs-copy {
     max-width: none;
-    max-height: min(54vh, calc(100dvh - 13rem));
-    padding: 1.05rem 1.1rem;
-    background: linear-gradient(160deg, rgba(8,8,8,0.93), rgba(8,8,8,0.82));
+    max-height: min(46vh, calc(100dvh - 21rem));
+    padding: 1rem 1.05rem;
+    background: linear-gradient(160deg, rgba(8,8,8,0.92), rgba(8,8,8,0.82));
   }
   .vs-copy h2 { font-size: clamp(1.35rem, 6vw, 1.8rem); }
   .vs-body { font-size: 0.84rem; margin-top: 0.45rem; }
@@ -431,6 +450,12 @@ html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-h
   .vs-features { gap: 0.3rem 0.4rem; margin-top: 0.55rem; }
   .vs-features li { font-size: 0.62rem; padding: 0.24rem 0.5rem; }
   .vs-hint { margin-top: 0.8rem; }
+  /* Callouts gather at the top, clear of the vehicle. */
+  .vs-annot { align-items: start; gap: 0.4rem 0.8rem; padding: calc(4.8rem + env(safe-area-inset-top, 0px)) 1rem 1rem; }
+  .vs-annot__col { gap: 0.35rem; }
+  .vs-annot__col--end li:nth-child(n + 5) { display: none; }
+  .vs-annot__label { font-size: 0.55rem; }
+  .vs-annot__value { font-size: 0.85rem; }
 }
 @media (max-width: 480px) {
   .vs-overlay { padding-top: calc(4.2rem + env(safe-area-inset-top, 0px)); }
