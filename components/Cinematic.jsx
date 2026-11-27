@@ -139,7 +139,9 @@ export default function Cinematic() {
         // Slow ambient parallax on every background for the full run.
         tl.fromTo(bgs, { scale: 1.06 }, { scale: 1.16, duration: last, ease: "none" }, 0);
 
-        const poseTo = (i) => ({ ...poseForStep(i), duration: i === 4 ? 1.2 : i === 5 ? 0.45 : 0.9 });
+        // The arrival move is kept short so the van fully settles before the departure zoom
+        // begins; a long arrival would otherwise be cut off mid-motion.
+        const poseTo = (i) => ({ ...poseForStep(i), duration: i === 1 ? 0.5 : i === 4 ? 1.2 : i === 5 ? 0.45 : 0.9 });
         for (let i = 1; i <= last; i++) {
           const at = i - 0.7;
           // text out / in
