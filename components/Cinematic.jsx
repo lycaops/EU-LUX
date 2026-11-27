@@ -139,9 +139,13 @@ export default function Cinematic() {
         // Slow ambient parallax on every background for the full run.
         tl.fromTo(bgs, { scale: 1.06 }, { scale: 1.16, duration: last, ease: "none" }, 0);
 
-        // The arrival move is kept short so the van fully settles before the departure zoom
-        // begins; a long arrival would otherwise be cut off mid-motion.
-        const poseTo = (i) => ({ ...poseForStep(i), duration: i === 1 ? 0.5 : i === 4 ? 1.2 : i === 5 ? 0.45 : 0.9 });
+        // The arrival drive-in eases out so the van decelerates and settles well before the
+        // departure zoom begins; a longer or linear arrival would otherwise be cut off mid-motion.
+        const poseTo = (i) => ({
+          ...poseForStep(i),
+          duration: i === 1 ? 0.55 : i === 4 ? 1.2 : i === 5 ? 0.45 : 0.9,
+          ...(i === 1 ? { ease: "power2.out" } : {}),
+        });
         for (let i = 1; i <= last; i++) {
           const at = i - 0.7;
           // text out / in
@@ -151,7 +155,7 @@ export default function Cinematic() {
           tl.to(texts[i].querySelectorAll(".word > span"), { yPercent: 0, duration: i === last ? 0.32 : 0.42, stagger: 0.04, ease: "power3.out" }, i === last ? at + 0.55 : at + 0.18);
           // background crossfade when the scene changes
           if (BG_FOR_STEP[i] !== BG_FOR_STEP[i - 1]) {
-            const bgAt = i === last ? at + 0.55 : i === 4 ? at - 0.2 : at;
+            const bgAt = i === last ? at + 0.55 : i === 4 ? at - 0.2 : i === 2 ? at + 0.22 : at;
             tl.to(bgs[BG_FOR_STEP[i]], { opacity: 1, duration: 0.7 }, bgAt);
             tl.to(bgs[BG_FOR_STEP[i - 1]], { opacity: 0, duration: 0.7 }, bgAt + 0.3);
           }
@@ -169,10 +173,11 @@ export default function Cinematic() {
             tl.to(".van-reflection", { opacity: 0, duration: 0.5 }, at + 0.35);
           } else if (i === 2) {
             // The exterior scene uses a photograph that already contains the vehicle, so the
-            // animated van zooms towards the camera and vanishes just before that scene begins.
-            const zoomAt = vanAt - 0.15;
+            // animated van first holds its arrived pose through the arrival copy, then accelerates
+            // towards the camera and slips out of frame just before that scene crossfades in.
+            const zoomAt = at - 0.15;
             tl.to(".van", { ...zoomPose(), duration: 0.4, ease: "power2.in" }, zoomAt);
-            tl.to(".van", { opacity: 0, duration: 0.35, ease: "power1.in" }, zoomAt + 0.05);
+            tl.to(".van", { opacity: 0, duration: 0.32, ease: "power1.in" }, zoomAt + 0.03);
             tl.to(".van-reflection", { opacity: 0, duration: 0.4 }, zoomAt);
           } else {
             tl.to(".van", poseTo(i), vanAt);
