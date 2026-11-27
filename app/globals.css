@@ -344,7 +344,7 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   .service-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
 }
 
-/* Scroll-driven fleet spec scene (between fleet and interior) */
+/* Scroll-driven fleet spec scene (opens the home details, above the fleet block) */
 .vs-track { position: relative; height: 360vh; }
 .vs-scene {
   position: sticky;
@@ -377,35 +377,64 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   z-index: 2;
   display: flex;
   align-items: flex-start;
-  padding: clamp(5.5rem, 12vh, 9rem) clamp(1.2rem, 6vw, 6rem) clamp(1.2rem, 4vw, 3rem);
+  padding: clamp(5.5rem, 9vh, 7rem) clamp(1.2rem, 6vw, 6rem) clamp(1.2rem, 4vw, 3rem);
   pointer-events: none;
 }
 .vs-copy {
   max-width: 440px;
+  max-height: calc(100dvh - 8rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
   padding: clamp(1.2rem, 2.5vw, 2rem);
   background: linear-gradient(150deg, rgba(8,8,8,0.74), rgba(8,8,8,0.42));
   border: 1px solid rgba(229,205,155,0.22);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   transition: opacity 120ms linear;
+  pointer-events: auto;
 }
+.vs-copy::-webkit-scrollbar { width: 6px; }
+.vs-copy::-webkit-scrollbar-track { background: transparent; }
+.vs-copy::-webkit-scrollbar-thumb { background: rgba(229,205,155,0.32); border-radius: 3px; }
 .vs-eyebrow { color: var(--gold); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 0.75rem; }
-.vs-copy h2 { font-size: clamp(1.7rem, 3.4vw, 2.9rem); color: var(--white); text-shadow: 0 2px 18px rgba(0,0,0,0.7); }
-.vs-body { margin-top: 0.7rem; color: rgba(255,255,255,0.72); font-size: 0.92rem; }
-.vs-specs { display: grid; gap: 0.75rem; margin-top: 1.4rem; }
-.vs-specs div { display: flex; align-items: baseline; justify-content: space-between; gap: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.vs-copy h2 { font-size: clamp(1.6rem, 2.6vw, 2.4rem); color: var(--white); text-shadow: 0 2px 18px rgba(0,0,0,0.7); }
+.vs-body { margin-top: 0.6rem; color: rgba(255,255,255,0.72); font-size: 0.9rem; }
+.vs-group-label { margin-top: 1.3rem; color: var(--gold); font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; }
+.vs-specs { display: grid; gap: 0.55rem; margin-top: 0.9rem; }
+.vs-specs div { display: flex; align-items: baseline; justify-content: space-between; gap: 1.2rem; padding-bottom: 0.45rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .vs-specs dt { display: inline-flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.5); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; }
-.vs-specs dt .icon { width: 14px; height: 14px; color: var(--gold); }
-.vs-specs dd { color: var(--champagne); font-family: var(--serif); font-size: 1.15rem; white-space: nowrap; }
+.vs-specs dt .icon { width: 14px; height: 14px; color: var(--gold); flex: none; }
+.vs-specs dd { color: var(--champagne); font-family: var(--serif); font-size: 1.05rem; white-space: nowrap; }
+.vs-specs--perf { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1.3rem; }
+.vs-specs--perf div { flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+.vs-specs--perf dd { font-size: 0.95rem; white-space: normal; }
+.vs-features { display: flex; flex-wrap: wrap; gap: 0.4rem 0.5rem; margin-top: 0.7rem; list-style: none; }
+.vs-features li { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.6rem; border: 1px solid rgba(229,205,155,0.24); border-radius: 999px; color: rgba(255,255,255,0.82); font-size: 0.66rem; letter-spacing: 0.04em; }
+.vs-features .icon { width: 12px; height: 12px; color: var(--gold); flex: none; }
 .vs-hint { margin-top: 1.2rem; color: var(--gold); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; }
-html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-hint { letter-spacing: 0; }
+html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-hint, html[dir="rtl"] .vs-group-label, html[dir="rtl"] .vs-features li { letter-spacing: 0; }
 @media (max-width: 760px) {
-  .vs-copy { max-width: none; }
-  .vs-specs dd { font-size: 1rem; }
+  /* The copy panel is capped and scrolls internally so it never sits on top of the van. */
+  .vs-overlay { padding: calc(4.4rem + env(safe-area-inset-top, 0px)) 1.1rem 1rem; }
+  .vs-copy {
+    max-width: none;
+    max-height: min(54vh, calc(100dvh - 13rem));
+    padding: 1.05rem 1.1rem;
+    background: linear-gradient(160deg, rgba(8,8,8,0.93), rgba(8,8,8,0.82));
+  }
+  .vs-copy h2 { font-size: clamp(1.35rem, 6vw, 1.8rem); }
+  .vs-body { font-size: 0.84rem; margin-top: 0.45rem; }
+  .vs-group-label { margin-top: 0.9rem; }
+  .vs-specs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem 1rem; margin-top: 0.75rem; }
+  .vs-specs div { flex-direction: column; align-items: flex-start; gap: 0.1rem; padding-bottom: 0.35rem; }
+  .vs-specs dd { font-size: 0.95rem; white-space: normal; }
+  .vs-features { gap: 0.3rem 0.4rem; margin-top: 0.55rem; }
+  .vs-features li { font-size: 0.62rem; padding: 0.24rem 0.5rem; }
+  .vs-hint { margin-top: 0.8rem; }
 }
 @media (max-width: 480px) {
-  .vs-overlay { padding-top: 4.5rem; }
-  .vs-copy h2 { font-size: clamp(1.5rem, 7vw, 2rem); }
+  .vs-overlay { padding-top: calc(4.2rem + env(safe-area-inset-top, 0px)); }
+  .vs-copy h2 { font-size: clamp(1.25rem, 6.4vw, 1.6rem); }
 }
 
 /* Booking request and management workspaces */

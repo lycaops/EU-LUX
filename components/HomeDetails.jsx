@@ -26,6 +26,8 @@ export default function HomeDetails() {
 
   return (
     <div className="home-details">
+      <VehicleScene />
+
       <section className="home-detail fleet-detail" id="fleet">
         <div className="home-detail__inner fleet-detail__layout">
           <div className="home-detail__copy">
@@ -45,8 +47,6 @@ export default function HomeDetails() {
           </figure>
         </div>
       </section>
-
-      <VehicleScene />
 
       <section className="home-detail interior-detail" id="interior">
         <div className="home-detail__inner">

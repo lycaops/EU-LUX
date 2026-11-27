@@ -11,7 +11,7 @@ const V_FRONT = { cx: 261.4, cy: 655.4, size: 212 };
 const V_REAR = { cx: 1378.75, cy: 665.75, size: 212 };
 const V_ENTRY = 1854, V_WHEEL = 5 * Math.PI, V_DOOR = 352, V_ZOOM = 2.24, V_FX = 955, V_FY = 456;
 
-const BG_SRC = "/scenes/v250-milan/duomo-piazza.jpg";
+const BG_SRC = "/scenes/v250-milan/duomo-piazza.webp";
 const IMG_SRC = {
   vehicle: "/scenes/v250-milan/vehicle.webp",
   door: "/scenes/v250-milan/door.webp",
@@ -92,10 +92,14 @@ export default function VehicleScene() {
       const rw = VCW * rs;
       const ox = (w - rw) / 2;
       const zoomTarget = w < 520 ? 1.62 : w < 900 ? 1.9 : V_ZOOM;
+      const narrow = w < 760;
       // Keep the wheel bottoms on the piazza paving; on tall screens reserve room for the synchronized background zoom.
       const wheelBase = (V_FRONT.cy + V_FRONT.size / 2 + V_REAR.cy + V_REAR.size / 2) / 2;
       const maxFocusY = h * (1 - 0.5 / zoomTarget - 0.035);
-      const groundY = Math.min(h * 0.86, maxFocusY + (wheelBase - V_FY) * rs);
+      // Phones stack the spec panel above the van, so keep the vehicle low and clear of the copy.
+      const groundY = narrow
+        ? h * 0.87
+        : Math.min(h * 0.86, maxFocusY + (wheelBase - V_FY) * rs);
       const oy = groundY - wheelBase * rs;
       const st = vcState(cl(p, 0, 1) * 7, zoomTarget);
       const lx = lp(w / 2, ox + V_FX * rs, st.zoom), ly = lp(h / 2, oy + V_FY * rs, st.zoom);
@@ -272,6 +276,21 @@ export default function VehicleScene() {
                   );
                 })}
               </dl>
+              <p className="vs-group-label">{spec.performanceLabel}</p>
+              <dl className="vs-specs vs-specs--perf">
+                {spec.performance.map((item) => (
+                  <div key={item.label}>
+                    <dt>{item.label}</dt>
+                    <dd>{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="vs-group-label">{spec.featuresLabel}</p>
+              <ul className="vs-features">
+                {spec.features.map((feature) => (
+                  <li key={feature}><IconCheck />{feature}</li>
+                ))}
+              </ul>
               <p className="vs-hint">{spec.hint}</p>
             </div>
           </div>
