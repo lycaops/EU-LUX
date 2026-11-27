@@ -21,6 +21,8 @@ const IMG_SRC = {
 };
 
 const SPEC_ICONS = [IconSofa, IconClimate, IconCheck];
+// Hold the vehicle off-stage until the pinned scene has fitted the screen, so the drive-in begins on scroll only once the backdrop fills the viewport.
+const START_DELAY = 0.04;
 
 const cl = (v, a, b) => Math.max(a, Math.min(b, v));
 const lp = (a, b, t) => a + (b - a) * t;
@@ -53,7 +55,6 @@ export default function VehicleScene() {
   const canvasRef = useRef(null);
   const bgRef = useRef(null);
   const specsRef = useRef(null);
-  const annotRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -61,19 +62,14 @@ export default function VehicleScene() {
     const track = trackRef.current;
     const bg = bgRef.current;
     const specs = specsRef.current;
-    const annot = annotRef.current;
     if (!canvas || !scene || !track || !bg) return;
 
     const ctx = canvas.getContext("2d", { alpha: true });
     const imgs = {};
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    // The scene rests on the fitted background while the page is scrolling; the
-    // cinematic then runs on its own clock once the scroll comes to a stop.
-    const SCROLL_IDLE_MS = 130;
-    const PLAY_SECONDS = 5;
     let ready = false, w = 0, h = 0, dpr = 1;
-    let playP = 0, settled = true, frame = 0, lastTs = 0, idleTimer = 0;
+    let currentP = 0, targetP = 0, frame = 0;
 
     function sizeCanvas() {
       const cw = canvas.clientWidth, ch = canvas.clientHeight;
@@ -107,7 +103,8 @@ export default function VehicleScene() {
         ? h * 0.87
         : Math.min(h * 0.86, maxFocusY + (wheelBase - V_FY) * rs);
       const oy = groundY - wheelBase * rs;
-      const st = vcState(cl(p, 0, 1) * 7, zoomTarget);
+      const anim = cl((p - START_DELAY) / (1 - START_DELAY), 0, 1);
+      const st = vcState(anim * 7, zoomTarget);
       const lx = lp(w / 2, ox + V_FX * rs, st.zoom), ly = lp(h / 2, oy + V_FY * rs, st.zoom);
 
       // Apply the same camera matrix to the photo so pavement and van stay in one believable space.
@@ -121,17 +118,10 @@ export default function VehicleScene() {
 
       // The spec panel clears the frame before the cabin close-up takes over.
       if (specs) {
-        const o = 1 - sstep(0.5, 0.64, p);
+        const o = 1 - sstep(0.5, 0.64, anim);
         specs.style.opacity = o.toFixed(3);
         specs.style.transform = `translate3d(0,${(-18 * (1 - o)).toFixed(1)}px,0)`;
         specs.style.visibility = o < 0.02 ? "hidden" : "visible";
-      }
-
-      // With the panel gone, the spec callouts ring the vehicle through the zoom.
-      if (annot) {
-        const o = sstep(0.66, 0.84, p);
-        annot.style.opacity = o.toFixed(3);
-        annot.style.visibility = o < 0.02 ? "hidden" : "visible";
       }
 
       c.translate(w / 2, h / 2);
@@ -204,45 +194,30 @@ export default function VehicleScene() {
       c.restore();
     }
 
-    function sync(dt) {
-      const rect = track.getBoundingClientRect();
-      const vh = window.innerHeight || 1;
-      const travel = Math.max(track.offsetHeight - vh, 1);
-      const rawP = cl(-rect.top / travel, 0, 1);
-
-      if (rect.top > 0.5) { playP = 0; return false; }        // section still below the viewport
-      if (rawP >= 0.999) { playP = 1; return false; }         // scrolled all the way through
-      if (settled) playP = reduce.matches ? 1 : Math.min(1, playP + dt / PLAY_SECONDS);
-      return settled && playP < 1;                            // cinematic still running
+    function measure() {
+      const travel = Math.max(track.offsetHeight - window.innerHeight, 1);
+      return cl(-track.getBoundingClientRect().top / travel, 0, 1);
     }
 
-    function tick() {
-      if (!frame) frame = requestAnimationFrame(renderFrame);
-    }
-
-    function renderFrame(ts) {
-      frame = 0;
-      const dt = lastTs ? cl((ts - lastTs) / 1000, 0, 0.05) : 1 / 60;
-      lastTs = ts;
-      const running = sync(dt);
-      draw(playP);
-      if (running) frame = requestAnimationFrame(renderFrame);
-      else lastTs = 0;
+    function renderFrame() {
+      const delta = targetP - currentP;
+      if (reduce.matches) currentP = targetP;
+      else currentP = Math.abs(delta) < 0.001 ? targetP : currentP + delta * 0.16;
+      draw(currentP);
+      if (Math.abs(targetP - currentP) >= 0.001) frame = requestAnimationFrame(renderFrame);
+      else frame = 0;
     }
 
     function onScroll() {
-      settled = false;
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => { settled = true; tick(); }, SCROLL_IDLE_MS);
-      tick();
+      targetP = measure();
+      if (!frame) frame = requestAnimationFrame(renderFrame);
     }
 
     function resize() {
       sizeCanvas();
-      lastTs = 0;
-      sync(0);
-      draw(playP);
-      if (settled) tick();
+      targetP = measure();
+      currentP = targetP;
+      draw(currentP);
     }
 
     let cancelled = false;
@@ -275,7 +250,6 @@ export default function VehicleScene() {
 
     return () => {
       cancelled = true;
-      clearTimeout(idleTimer);
       if (frame) cancelAnimationFrame(frame);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", resize);
@@ -289,24 +263,6 @@ export default function VehicleScene() {
         <div className="vs-scene" ref={sceneRef}>
           <img className="vs-bg" ref={bgRef} src={BG_SRC} alt="" aria-hidden="true" />
           <canvas className="vs-canvas" ref={canvasRef} role="img" aria-label={spec.body} />
-          <div className="vs-annot" ref={annotRef} aria-hidden="true">
-            <ul className="vs-annot__col vs-annot__col--start">
-              {spec.specs.map((item) => (
-                <li key={item.label}>
-                  <span className="vs-annot__label">{item.label}</span>
-                  <span className="vs-annot__value">{item.value}</span>
-                </li>
-              ))}
-            </ul>
-            <ul className="vs-annot__col vs-annot__col--end">
-              {spec.performance.map((item) => (
-                <li key={item.label}>
-                  <span className="vs-annot__label">{item.label}</span>
-                  <span className="vs-annot__value">{item.value}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
           <div className="vs-overlay">
             <div className="vs-copy" ref={specsRef}>
               <p className="vs-eyebrow">{spec.eyebrow}</p>
