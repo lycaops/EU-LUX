@@ -81,16 +81,19 @@ export default function Cinematic() {
           mobile: {
             0: { x: "0vw", y: "5vh", scale: 1.16 },  // hero
             1: { x: "0vw", y: "10vh", scale: 1.3 },  // arrival
+            2: { x: "0vw", y: "10vh", scale: 1.7, opacity: 0.9 },  // arrival ending: enlarge in place, stay visible
             4: { x: "0vw", y: "9vh", scale: 1.1 },   // experience: resting pose on the road
           },
           tablet: {
             0: { x: "-17vw", y: "5vh", scale: 0.92 },  // hero
             1: { x: "-3vw", y: "9vh", scale: 1.14 },  // arrival
+            2: { x: "-3vw", y: "9vh", scale: 1.7, opacity: 0.9 },  // arrival ending: enlarge in place, stay visible
             4: { x: "12vw", y: "9vh", scale: 0.84 },  // experience: resting pose on the road
           },
           desktop: {
             0: { x: "-17vw", y: "7vh", scale: 1.04 }, // hero
             1: { x: "-4vw", y: "10vh", scale: 1.18 }, // arrival
+            2: { x: "-4vw", y: "10vh", scale: 1.7, opacity: 0.9 }, // arrival ending: enlarge in place, stay visible
             4: { x: "14vw", y: "10vh", scale: 0.88 }, // experience: resting pose on the road
           },
         };

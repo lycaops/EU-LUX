@@ -150,7 +150,10 @@ html[dir="rtl"] .nav__links { letter-spacing: 0; font-size: 0.95rem; }
 .bg-6 { background-image: url(/scenes/ext_2.webp); background-position: center 50%; }
 
 .van { position: absolute; z-index: 2; left: 50%; bottom: 14%; width: min(78vw, 980px); transform: translateX(-50%); will-change: transform, opacity; filter: drop-shadow(0 40px 40px rgba(0,0,0,0.6)); }
-.van img { width: 100%; height: auto; }
+/* v250.webp is framed with the vehicle pushed to the right, so shift the image left to bring the
+   vehicle's own centre onto the .van box centre. This keeps scaling anchored to the vehicle centre
+   (no rightward drift when it enlarges) at every breakpoint. */
+.van img { width: 100%; height: auto; transform: translateX(-8.2%); }
 .van-reflection { position: absolute; z-index: 2; left: 50%; bottom: 10%; width: min(70vw, 860px); height: 40px; transform: translateX(-50%); background: radial-gradient(ellipse, rgba(198,161,91,0.35), transparent 70%); filter: blur(14px); }
 
 .scene-text { position: absolute; z-index: 2; inset-inline: 0; top: 24%; padding: 0 clamp(1.2rem, 6vw, 6rem); text-align: center; opacity: 0; pointer-events: none; }
@@ -222,9 +225,6 @@ html[dir="rtl"] .booking label { letter-spacing: 0; font-size: 0.85rem; }
   .scene-text--s7 { top: 8%; }
   .scene-text--s4 h2, .scene-text--s5 h2, .scene-text--s6 h2, .scene-text--s7 h2 { font-size: clamp(2.2rem, 7vw, 3.8rem); }
   .van-reflection { bottom: 4%; width: min(92vw, 860px); }
-  /* v250.webp is framed with the vehicle pushed to the right, so nudge the image left on
-     small screens to keep the van visually centred the way the previous art was. */
-  .van img { transform: translateX(-8.2%); }
   /* Keep the hero booking panel inside the pinned stage on small screens. */
   .booking { bottom: 3%; width: 94vw; padding: 1rem; max-height: 86svh; overflow-y: auto; }
   .booking form { gap: 0.6rem; }
