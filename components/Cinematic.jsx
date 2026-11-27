@@ -102,6 +102,14 @@ export default function Cinematic() {
           desktop: { x: "-80vw", y: "68vh", scale: 2.8 },
         };
         const exitPose = () => (mobile ? VAN_EXIT.mobile : tablet ? VAN_EXIT.tablet : VAN_EXIT.desktop);
+        // Before the exterior scene (whose photo already shows the vehicle) the van zooms in
+        // place towards the camera, so the cut never reveals a second vehicle.
+        const VAN_ZOOM = {
+          mobile: { x: "0vw", y: "10vh", scale: 1.7 },
+          tablet: { x: "-3vw", y: "9vh", scale: 1.7 },
+          desktop: { x: "-4vw", y: "10vh", scale: 1.7 },
+        };
+        const zoomPose = () => (mobile ? VAN_ZOOM.mobile : tablet ? VAN_ZOOM.tablet : VAN_ZOOM.desktop);
         const poseForStep = (i) => {
           if (!(i in VAN_POSES.desktop)) return POSES[i];
           const group = mobile ? VAN_POSES.mobile : tablet ? VAN_POSES.tablet : VAN_POSES.desktop;
@@ -159,9 +167,11 @@ export default function Cinematic() {
             tl.to(".van-reflection", { opacity: 0, duration: 0.5 }, at + 0.35);
           } else if (i === 2) {
             // The exterior scene uses a photograph that already contains the vehicle, so the
-            // animated van clears the frame just before that scene begins.
-            tl.to(".van", { opacity: 0, duration: 0.3 }, vanAt);
-            tl.to(".van-reflection", { opacity: 0, duration: 0.3 }, vanAt);
+            // animated van zooms towards the camera and vanishes just before that scene begins.
+            const zoomAt = vanAt - 0.15;
+            tl.to(".van", { ...zoomPose(), duration: 0.4, ease: "power2.in" }, zoomAt);
+            tl.to(".van", { opacity: 0, duration: 0.35, ease: "power1.in" }, zoomAt + 0.05);
+            tl.to(".van-reflection", { opacity: 0, duration: 0.4 }, zoomAt);
           } else {
             tl.to(".van", poseTo(i), vanAt);
             tl.to(".van-reflection", { opacity: POSES[i].opacity ? 1 : 0, duration: 0.6 }, vanAt);
