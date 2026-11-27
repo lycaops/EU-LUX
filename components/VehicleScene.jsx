@@ -55,6 +55,7 @@ export default function VehicleScene() {
   const canvasRef = useRef(null);
   const bgRef = useRef(null);
   const specsRef = useRef(null);
+  const vipRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,6 +63,7 @@ export default function VehicleScene() {
     const track = trackRef.current;
     const bg = bgRef.current;
     const specs = specsRef.current;
+    const vip = vipRef.current;
     if (!canvas || !scene || !track || !bg) return;
 
     const ctx = canvas.getContext("2d", { alpha: true });
@@ -122,6 +124,16 @@ export default function VehicleScene() {
         specs.style.opacity = o.toFixed(3);
         specs.style.transform = `translate3d(0,${(-18 * (1 - o)).toFixed(1)}px,0)`;
         specs.style.visibility = o < 0.02 ? "hidden" : "visible";
+      }
+
+      // As the door opens and the camera moves into the cabin, an invitation for guests fades in.
+      if (vip) {
+        const enter = sstep(0.42, 0.56, anim);
+        const exit = 1 - sstep(0.93, 1, anim);
+        const o = Math.min(enter, exit);
+        vip.style.opacity = o.toFixed(3);
+        vip.style.transform = `translate(-50%, calc(-50% + ${((1 - enter) * 18).toFixed(1)}px))`;
+        vip.style.visibility = o < 0.02 ? "hidden" : "visible";
       }
 
       c.translate(w / 2, h / 2);
@@ -296,6 +308,11 @@ export default function VehicleScene() {
               </ul>
               <p className="vs-hint">{spec.hint}</p>
             </div>
+          </div>
+          <div className="vs-vip" ref={vipRef}>
+            <p className="vs-vip__eyebrow">{spec.vipEyebrow}</p>
+            <h2>{spec.vipTitle}</h2>
+            <p className="vs-vip__body">{spec.vipBody}</p>
           </div>
         </div>
       </div>

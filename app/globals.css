@@ -378,7 +378,8 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   z-index: 0;
   display: flex;
   align-items: flex-start;
-  padding: clamp(5.2rem, 8.5vh, 6.5rem) clamp(1.2rem, 5vw, 5rem) clamp(1.2rem, 4vw, 3rem);
+  /* Top edge meets the fixed nav (14px inset + 80px min-height). */
+  padding: 5.9rem clamp(1.2rem, 5vw, 5rem) clamp(1.2rem, 4vw, 3rem);
   pointer-events: none;
 }
 .vs-copy {
@@ -409,12 +410,36 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 .vs-features .icon { width: 12px; height: 12px; color: var(--gold); flex: none; }
 .vs-hint { margin-top: 1.2rem; color: var(--gold); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; }
 html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-hint, html[dir="rtl"] .vs-group-label, html[dir="rtl"] .vs-features li { letter-spacing: 0; }
+/* Guest invitation that appears once the door opens and the camera enters the cabin.
+   It sits above the vehicle layer, in the open centre of the frame. */
+.vs-vip {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  z-index: 2;
+  width: min(620px, 86vw);
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -50%);
+  will-change: opacity, transform;
+  pointer-events: none;
+}
+.vs-vip__eyebrow { color: #f1d9a4; font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase; margin-bottom: 1rem; }
+.vs-vip h2 { font-size: clamp(1.9rem, 4.4vw, 3.4rem); color: #fff; }
+.vs-vip__body { margin-top: 0.9rem; color: rgba(255,255,255,0.9); font-size: 1rem; }
+.vs-vip__eyebrow, .vs-vip h2, .vs-vip__body { text-shadow: 0 2px 22px rgba(0,0,0,0.82), 0 1px 4px rgba(0,0,0,0.7); }
+html[dir="rtl"] .vs-vip__eyebrow { letter-spacing: 0; font-size: 0.95rem; }
+@media (max-width: 980px) {
+  /* Nav drops to a 10px inset with a 70px min-height, so the panel follows it up. */
+  .vs-overlay { padding-top: calc(5rem + env(safe-area-inset-top, 0px)); }
+}
 @media (max-width: 760px) {
   /* Fit the panel to the viewport; it never scrolls, so no scrollbar is shown. */
-  .vs-overlay { padding: calc(4.2rem + env(safe-area-inset-top, 0px)) 1rem 1rem; }
+  .vs-overlay { padding: calc(5rem + env(safe-area-inset-top, 0px)) 1rem 1rem; }
   .vs-copy {
     width: min(100%, 30rem);
-    max-height: calc(100dvh - 5.2rem);
+    max-height: calc(100dvh - 6rem);
     padding: 1rem 1.05rem;
     background: linear-gradient(160deg, rgba(8,8,8,0.86), rgba(8,8,8,0.72));
   }
@@ -428,9 +453,14 @@ html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-h
   .vs-features { gap: 0.28rem 0.38rem; margin-top: 0.5rem; }
   .vs-features li { font-size: 0.6rem; padding: 0.22rem 0.48rem; }
   .vs-hint { margin-top: 0.7rem; }
+  /* The panel has cleared the frame by now, so the invitation sits in the open upper-middle. */
+  .vs-vip { top: 38%; width: min(30rem, 88vw); }
+  .vs-vip__eyebrow { font-size: 0.66rem; letter-spacing: 0.3em; margin-bottom: 0.7rem; }
+  .vs-vip h2 { font-size: clamp(1.5rem, 6.4vw, 2.1rem); }
+  .vs-vip__body { margin-top: 0.6rem; font-size: 0.86rem; }
 }
 @media (max-width: 480px) {
-  .vs-overlay { padding-top: calc(4.2rem + env(safe-area-inset-top, 0px)); }
+  .vs-overlay { padding-top: calc(5rem + env(safe-area-inset-top, 0px)); }
   .vs-copy h2 { font-size: clamp(1.25rem, 6.4vw, 1.6rem); }
 }
 
