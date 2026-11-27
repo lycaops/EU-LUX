@@ -387,10 +387,11 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   max-height: 100%;
   overflow: hidden;
   padding: clamp(1.05rem, 2.2vw, 1.8rem);
-  background: linear-gradient(150deg, rgba(8,8,8,0.68), rgba(8,8,8,0.34));
+  /* Opaque gradient instead of backdrop-filter: the panel sits over a backdrop
+     that re-scales every scroll frame, so a live blur would re-rasterise each
+     frame and stall the scene. */
+  background: linear-gradient(150deg, rgba(8,8,8,0.9), rgba(8,8,8,0.74));
   border: 1px solid rgba(229,205,155,0.22);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
   transition: opacity 120ms linear;
 }
 .vs-eyebrow { color: var(--gold); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 0.75rem; }

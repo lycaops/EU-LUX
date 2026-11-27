@@ -72,6 +72,8 @@ export default function VehicleScene() {
 
     let ready = false, w = 0, h = 0, dpr = 1;
     let currentP = 0, targetP = 0, frame = 0;
+    // Skip all canvas work while the scene is off-screen so the rest of the page scrolls freely.
+    let visible = typeof IntersectionObserver === "undefined";
 
     function sizeCanvas() {
       const cw = canvas.clientWidth, ch = canvas.clientHeight;
@@ -90,7 +92,7 @@ export default function VehicleScene() {
       c.clearRect(0, 0, canvas.width, canvas.height);
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.imageSmoothingEnabled = true;
-      c.imageSmoothingQuality = "high";
+      c.imageSmoothingQuality = "medium";
 
       const rs = Math.min(w * (w < 640 ? 0.94 : 0.76) / VCW, h * (w < 640 ? 0.76 : 0.62) / VCH);
       const rw = VCW * rs;
@@ -212,6 +214,7 @@ export default function VehicleScene() {
     }
 
     function renderFrame() {
+      if (!visible) { frame = 0; return; }
       const delta = targetP - currentP;
       if (reduce.matches) currentP = targetP;
       else currentP = Math.abs(delta) < 0.001 ? targetP : currentP + delta * 0.16;
@@ -221,6 +224,7 @@ export default function VehicleScene() {
     }
 
     function onScroll() {
+      if (!visible) return;
       targetP = measure();
       if (!frame) frame = requestAnimationFrame(renderFrame);
     }
@@ -259,6 +263,17 @@ export default function VehicleScene() {
       ro.observe(scene);
       ro.observe(track);
     }
+    let io;
+    if (window.IntersectionObserver) {
+      // Pre-arm just before the track enters so the first frame is already in place.
+      io = new IntersectionObserver((entries) => {
+        const next = entries[0].isIntersecting;
+        if (next === visible) return;
+        visible = next;
+        if (next) { currentP = targetP = measure(); draw(currentP); }
+      }, { rootMargin: "200px 0px" });
+      io.observe(track);
+    }
 
     return () => {
       cancelled = true;
@@ -266,6 +281,7 @@ export default function VehicleScene() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", resize);
       if (ro) ro.disconnect();
+      if (io) io.disconnect();
     };
   }, []);
 
