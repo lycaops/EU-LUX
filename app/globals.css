@@ -390,13 +390,13 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
   /* Opaque gradient instead of backdrop-filter: the panel sits over a backdrop
      that re-scales every scroll frame, so a live blur would re-rasterise each
      frame and stall the scene. */
-  background: linear-gradient(150deg, rgba(8,8,8,0.9), rgba(8,8,8,0.74));
+  background: linear-gradient(150deg, rgba(8,8,8,0.95), rgba(8,8,8,0.88));
   border: 1px solid rgba(229,205,155,0.22);
   transition: opacity 120ms linear;
 }
 .vs-eyebrow { color: var(--gold); font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase; margin-bottom: 0.75rem; }
 .vs-copy h2 { font-size: clamp(1.6rem, 2.6vw, 2.4rem); color: var(--white); text-shadow: 0 2px 18px rgba(0,0,0,0.7); }
-.vs-body { margin-top: 0.6rem; color: rgba(255,255,255,0.72); font-size: 0.9rem; }
+.vs-body { margin-top: 0.6rem; color: rgba(255,255,255,0.82); font-size: 0.9rem; }
 .vs-group-label { margin-top: 1.3rem; color: var(--gold); font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; }
 .vs-specs { display: grid; gap: 0.55rem; margin-top: 0.9rem; }
 .vs-specs div { display: flex; align-items: baseline; justify-content: space-between; gap: 1.2rem; padding-bottom: 0.45rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -412,24 +412,37 @@ html[dir="rtl"] .home-detail__eyebrow, html[dir="rtl"] .fleet-specs dt { letter-
 .vs-hint { margin-top: 1.2rem; color: var(--gold); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; }
 html[dir="rtl"] .vs-eyebrow, html[dir="rtl"] .vs-specs dt, html[dir="rtl"] .vs-hint, html[dir="rtl"] .vs-group-label, html[dir="rtl"] .vs-features li { letter-spacing: 0; }
 /* Guest invitation that appears once the door opens and the camera enters the cabin.
-   It sits above the vehicle layer, in the open centre of the frame. */
+   The lead sits above the frame and the closing line below, leaving the cabin
+   close-up in the middle unobstructed. */
 .vs-vip {
   position: absolute;
-  left: 50%;
-  top: 44%;
+  inset: 0;
   z-index: 2;
-  width: min(620px, 86vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(6rem, 15vh, 9rem) clamp(1.2rem, 5vw, 5rem) clamp(2rem, 9vh, 4.5rem);
   text-align: center;
   opacity: 0;
   visibility: hidden;
-  transform: translate(-50%, -50%);
   will-change: opacity, transform;
   pointer-events: none;
 }
-.vs-vip__eyebrow { color: #f1d9a4; font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase; margin-bottom: 1rem; }
+/* Darken only the top and bottom bands so the invitation stays readable over the
+   photo while the vehicle interior in the centre stays clear. */
+.vs-vip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0) 32%, rgba(0,0,0,0) 68%, rgba(0,0,0,0.6));
+}
+.vs-vip__lead, .vs-vip__body { width: min(620px, 86vw); }
+.vs-vip__eyebrow { color: #f1d9a4; font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase; margin-bottom: 0.85rem; }
 .vs-vip h2 { font-size: clamp(1.9rem, 4.4vw, 3.4rem); color: #fff; }
-.vs-vip__body { margin-top: 0.9rem; color: rgba(255,255,255,0.9); font-size: 1rem; }
-.vs-vip__eyebrow, .vs-vip h2, .vs-vip__body { text-shadow: 0 2px 22px rgba(0,0,0,0.82), 0 1px 4px rgba(0,0,0,0.7); }
+.vs-vip__body { color: rgba(255,255,255,0.94); font-size: 1rem; }
+.vs-vip__eyebrow, .vs-vip h2, .vs-vip__body { text-shadow: 0 2px 22px rgba(0,0,0,0.88), 0 1px 3px rgba(0,0,0,0.9); }
 html[dir="rtl"] .vs-vip__eyebrow { letter-spacing: 0; font-size: 0.95rem; }
 @media (max-width: 980px) {
   /* Nav drops to a 10px inset with a 70px min-height, so the panel follows it up. */
@@ -442,7 +455,7 @@ html[dir="rtl"] .vs-vip__eyebrow { letter-spacing: 0; font-size: 0.95rem; }
     width: min(100%, 30rem);
     max-height: calc(100dvh - 6rem);
     padding: 1rem 1.05rem;
-    background: linear-gradient(160deg, rgba(8,8,8,0.86), rgba(8,8,8,0.72));
+    background: linear-gradient(160deg, rgba(8,8,8,0.95), rgba(8,8,8,0.88));
   }
   .vs-copy h2 { font-size: clamp(1.3rem, 5.6vw, 1.7rem); }
   .vs-body { font-size: 0.82rem; margin-top: 0.4rem; }
@@ -451,14 +464,16 @@ html[dir="rtl"] .vs-vip__eyebrow { letter-spacing: 0; font-size: 0.95rem; }
   .vs-specs div { padding-bottom: 0.3rem; }
   .vs-specs dd { font-size: 0.95rem; white-space: normal; }
   .vs-specs--perf { gap: 0.45rem 1rem; }
-  .vs-features { gap: 0.28rem 0.38rem; margin-top: 0.5rem; }
-  .vs-features li { font-size: 0.6rem; padding: 0.22rem 0.48rem; }
+  /* Drop the feature chips on phones so the panel leaves room for the vehicle. */
+  .vs-features-group { display: none; }
   .vs-hint { margin-top: 0.7rem; }
-  /* The panel has cleared the frame by now, so the invitation sits in the open upper-middle. */
-  .vs-vip { top: 38%; width: min(30rem, 88vw); }
+  /* The panel has cleared before the invitation arrives, so the lead sits at the
+     top and the closing line at the bottom, clear of the cabin close-up. */
+  .vs-vip { padding: calc(4.75rem + env(safe-area-inset-top, 0px)) 1rem 1.5rem; }
+  .vs-vip__lead, .vs-vip__body { width: min(100%, 30rem); }
   .vs-vip__eyebrow { font-size: 0.66rem; letter-spacing: 0.3em; margin-bottom: 0.7rem; }
   .vs-vip h2 { font-size: clamp(1.5rem, 6.4vw, 2.1rem); }
-  .vs-vip__body { margin-top: 0.6rem; font-size: 0.86rem; }
+  .vs-vip__body { font-size: 0.86rem; }
 }
 @media (max-width: 480px) {
   .vs-overlay { padding-top: calc(5rem + env(safe-area-inset-top, 0px)); }

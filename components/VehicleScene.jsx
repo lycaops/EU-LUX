@@ -130,11 +130,12 @@ export default function VehicleScene() {
 
       // As the door opens and the camera moves into the cabin, an invitation for guests fades in.
       if (vip) {
-        const enter = sstep(0.42, 0.56, anim);
+        // Hold the invitation back until the spec panel has fully cleared, so the two never overlap.
+        const enter = sstep(0.64, 0.78, anim);
         const exit = 1 - sstep(0.93, 1, anim);
         const o = Math.min(enter, exit);
         vip.style.opacity = o.toFixed(3);
-        vip.style.transform = `translate(-50%, calc(-50% + ${((1 - enter) * 18).toFixed(1)}px))`;
+        vip.style.transform = `translate3d(0,${((1 - enter) * 18).toFixed(1)}px,0)`;
         vip.style.visibility = o < 0.02 ? "hidden" : "visible";
       }
 
@@ -316,18 +317,22 @@ export default function VehicleScene() {
                   </div>
                 ))}
               </dl>
-              <p className="vs-group-label">{spec.featuresLabel}</p>
-              <ul className="vs-features">
-                {spec.features.map((feature) => (
-                  <li key={feature}><IconCheck />{feature}</li>
-                ))}
-              </ul>
+              <div className="vs-features-group">
+                <p className="vs-group-label">{spec.featuresLabel}</p>
+                <ul className="vs-features">
+                  {spec.features.map((feature) => (
+                    <li key={feature}><IconCheck />{feature}</li>
+                  ))}
+                </ul>
+              </div>
               <p className="vs-hint">{spec.hint}</p>
             </div>
           </div>
           <div className="vs-vip" ref={vipRef}>
-            <p className="vs-vip__eyebrow">{spec.vipEyebrow}</p>
-            <h2>{spec.vipTitle}</h2>
+            <div className="vs-vip__lead">
+              <p className="vs-vip__eyebrow">{spec.vipEyebrow}</p>
+              <h2>{spec.vipTitle}</h2>
+            </div>
             <p className="vs-vip__body">{spec.vipBody}</p>
           </div>
         </div>
